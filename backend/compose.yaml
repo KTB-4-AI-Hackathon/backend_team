@@ -15,5 +15,22 @@ services:
       timeout: 3s
       retries: 10
 
+  mongo:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: relationship_temperature
+      MONGO_INITDB_ROOT_PASSWORD: relationship_temperature
+      MONGO_INITDB_DATABASE: relationship_temperature
+    ports:
+      - "27017:27017"
+    volumes:
+      - relationship-temperature-mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   relationship-temperature-postgres:
+  relationship-temperature-mongo:

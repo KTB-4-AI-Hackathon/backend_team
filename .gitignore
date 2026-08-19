@@ -9,4 +9,7 @@ data/
 uploads/
 logs/
 tmp/
-/frontend/
+# 프론트엔드는 이 저장소에서 함께 관리한다. 의존성·빌드 산출물만 제외한다.
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
