@@ -195,7 +195,7 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
             {step === 2 && (
               <div>
                 <div className="modal-title">대화 데이터를 올려주세요</div>
-                <div className="modal-sub">카카오톡 대화 내보내기(.txt) 파일이면 충분해요</div>
+                <div className="modal-sub">카카오톡 대화 내보내기(.txt) 또는 CSV 파일을 올려주세요</div>
                 <div
                   className={`dropzone ${dragActive ? 'drag' : ''}`}
                   onClick={() => fileInputRef.current?.click()}
@@ -209,12 +209,12 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
                 >
                   <UploadIcon />
                   <div className="dropzone-text">파일을 여기로 끌어다 놓거나 클릭하여 업로드</div>
-                  <div className="dropzone-sub">.txt 파일 · 최대 50MB</div>
+                  <div className="dropzone-sub">.txt 또는 .csv 파일 · 최대 50MB</div>
                 </div>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".txt"
+                  accept=".txt,.csv,text/plain,text/csv"
                   hidden
                   onChange={(e) => handleFile(e.target.files?.[0])}
                 />
@@ -377,7 +377,7 @@ function ExportHelpLink() {
       </button>
       {show && (
         <p className="checkin-note" style={{ marginTop: 8 }}>
-          카카오톡 채팅방 &gt; 메뉴 &gt; 대화 내보내기를 선택하면 .txt 파일로 저장할 수 있어요.
+          카카오톡 채팅방 &gt; 메뉴 &gt; 대화 내보내기를 선택하면 .txt 파일로 저장할 수 있어요. CSV 형식의 채팅 파일도 업로드할 수 있어요.
         </p>
       )}
     </>
