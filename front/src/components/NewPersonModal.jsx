@@ -4,6 +4,7 @@ import { uploadConversationFile, getConversationFile } from '../api/conversation
 import { submitCheckIn } from '../api/checkins';
 import { startAnalysis, pollAnalysisJob } from '../api/analyses';
 import { RELATIONSHIP_TYPES, ANALYSIS_STAGE_LABELS } from '../data/constants';
+import { useAuth } from '../context/AuthContext';
 import { CloseIcon, UploadIcon, CheckIcon } from './Icons';
 import Astronaut from './Astronaut';
 import './NewPersonModal.css';
@@ -12,6 +13,7 @@ const CIRCUMFERENCE = 2 * Math.PI * 27;
 
 export default function NewPersonModal({ open, onClose, mode = 'create', relationship = null, onSuccess }) {
   const isAddData = mode === 'add-data';
+  const { user } = useAuth();
   const [step, setStep] = useState(isAddData ? 2 : 1);
   const [phase, setPhase] = useState('form'); // form | loading | success | error
   const [name, setName] = useState('');
@@ -54,9 +56,19 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
 
   async function handleFile(file) {
     if (!file) return;
+    const selfParticipantName = user?.displayName?.trim();
+    if (!selfParticipantName) {
+      setFileState({
+        name: file.name,
+        sizeBytes: file.size,
+        status: 'invalid',
+        message: '로그인 사용자 이름을 확인할 수 없어 파일을 올릴 수 없어요.',
+      });
+      return;
+    }
     setFileState({ name: file.name, sizeBytes: file.size, status: 'uploading' });
     try {
-      const uploaded = await uploadConversationFile(relationshipId, file);
+      const uploaded = await uploadConversationFile(relationshipId, file, selfParticipantName);
       setConversationFileId(uploaded.id);
       if (uploaded.validationStatus === 'VALIDATING') {
         await waitForValidation(uploaded.id);
