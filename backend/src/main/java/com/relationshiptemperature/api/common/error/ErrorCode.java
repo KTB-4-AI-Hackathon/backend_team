@@ -14,6 +14,8 @@ public enum ErrorCode {
     INVALID_KAKAO_EXPORT(HttpStatus.UNPROCESSABLE_CONTENT, "카카오톡 대화 내보내기 파일을 확인할 수 없습니다."),
     CHECK_IN_INCOMPLETE(HttpStatus.UNPROCESSABLE_CONTENT, "체크인 응답이 완전하지 않습니다."),
     ANALYSIS_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "현재 분석을 사용할 수 없습니다."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
+    UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "지원하지 않는 Content-Type입니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus status;
