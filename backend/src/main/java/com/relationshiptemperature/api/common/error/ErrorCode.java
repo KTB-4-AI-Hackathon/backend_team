@@ -1,0 +1,34 @@
+package com.relationshiptemperature.api.common.error;
+
+import org.springframework.http.HttpStatus;
+
+public enum ErrorCode {
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 형식이 올바르지 않습니다."),
+    AUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    RELATIONSHIP_NOT_FOUND(HttpStatus.NOT_FOUND, "관계를 찾을 수 없습니다."),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "리소스를 찾을 수 없습니다."),
+    ANALYSIS_ALREADY_RUNNING(HttpStatus.CONFLICT, "이미 분석이 진행 중입니다."),
+    FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "업로드 가능한 최대 파일 크기를 초과했습니다."),
+    UNSUPPORTED_FILE_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "지원하지 않는 파일 형식입니다."),
+    INVALID_KAKAO_EXPORT(HttpStatus.UNPROCESSABLE_CONTENT, "카카오톡 대화 내보내기 파일을 확인할 수 없습니다."),
+    CHECK_IN_INCOMPLETE(HttpStatus.UNPROCESSABLE_CONTENT, "체크인 응답이 완전하지 않습니다."),
+    ANALYSIS_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "현재 분석을 사용할 수 없습니다."),
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
+
+    private final HttpStatus status;
+    private final String defaultMessage;
+
+    ErrorCode(HttpStatus status, String defaultMessage) {
+        this.status = status;
+        this.defaultMessage = defaultMessage;
+    }
+
+    public HttpStatus status() {
+        return status;
+    }
+
+    public String defaultMessage() {
+        return defaultMessage;
+    }
+}
