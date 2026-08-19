@@ -1,6 +1,11 @@
 spring:
   application:
     name: relationship-temperature-api
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://relationship_temperature:relationship_temperature@localhost:27017/relationship_temperature?authSource=admin}
+  data:
+    mongodb:
+      auto-index-creation: true
   datasource:
     url: ${DB_URL:jdbc:h2:mem:relationship_temperature;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
     username: ${DB_USERNAME:sa}

@@ -3,12 +3,11 @@ package com.relationshiptemperature.api.consultation.repository;
 import com.relationshiptemperature.api.consultation.domain.Consultation;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface ConsultationRepository extends JpaRepository<Consultation, UUID> {
+public interface ConsultationRepository extends MongoRepository<Consultation, String> {
 
-    Optional<Consultation> findByIdAndUserId(UUID id, UUID userId);
+    Optional<Consultation> findByIdAndUserId(String id, String userId);
 
-    List<Consultation> findAllByUserIdOrderByUpdatedAtDesc(UUID userId);
+    List<Consultation> findAllByUserIdOrderByUpdatedAtDesc(String userId);
 }

@@ -1,4 +1,9 @@
 spring:
+  mongodb:
+    uri: mongodb://localhost:27017/relationship_temperature_chat_test
+  data:
+    mongodb:
+      auto-index-creation: false
   datasource:
     url: jdbc:h2:mem:relationship_temperature_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     username: sa
