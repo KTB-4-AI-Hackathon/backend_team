@@ -1,5 +1,8 @@
 # 관계온도 API 명세서
 
+> **프론트엔드·QA용 API별 상세 문서:** [`API_ENDPOINT_CATALOG.md`](./API_ENDPOINT_CATALOG.md)
+> 각 API의 Request/Response JSON, 필드 설명, 예시 데이터와 오류 조건은 상세 문서를 기준으로 확인한다.
+
 > 버전: v1.1 (MVP 합의안)  
 > 기준일: 2026-08-19  
 > API Base URL: `/api/v1`  
