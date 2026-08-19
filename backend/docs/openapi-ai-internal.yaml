@@ -25,10 +25,11 @@ paths:
       operationId: analyzePrqc
       summary: 정규화 대화를 동기 분석
       description: |
-        권장 입력은 짧은 만료시간의 다운로드 전용 Presigned URL이다. Object Storage가
-        없는 환경에서는 multipart로 gzip NDJSON을 전송할 수 있다. AI 서버는 단계별
-        진행률이나 콜백 없이 최종 결과를 동기 반환한다. 권장 호출 타임아웃은
-        60~120초이며 예상 처리 시간은 20~30초다.
+        현재 백엔드 HTTP 클라이언트는 multipart/form-data로 분석 메타데이터,
+        사용자·관계·체크인 context JSON, gzip NDJSON 대화 파일을 한 번에 전송한다.
+        application/json의 Presigned URL 방식은 Object Storage 연동 시 사용할 수 있는
+        대체 계약이다. AI 서버는 단계별 진행률이나 콜백 없이 최종 결과를 동기 반환한다.
+        권장 호출 타임아웃은 60~120초이며 예상 처리 시간은 20~30초다.
       parameters:
         - $ref: "#/components/parameters/RequestId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -76,6 +77,34 @@ paths:
                 contentType: application/gzip
               context:
                 contentType: application/json
+            examples:
+              backendMultipart:
+                summary: 현재 백엔드 HTTP 클라이언트가 전송하는 multipart 요청
+                value:
+                  analysisId: 0198c8a7-3000-7000-8000-000000000001
+                  relationshipType: FRIEND
+                  format: NORMALIZED_NDJSON_GZIP
+                  formatVersion: conversation-ndjson-1.0.0
+                  sha256: a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d
+                  context:
+                    user:
+                      userId: 0198c8a7-3000-7000-8000-000000000002
+                      displayName: 우
+                      timezone: Asia/Seoul
+                    relationship:
+                      relationshipId: 0198c8a7-3000-7000-8000-000000000003
+                      name: 민지
+                      relationshipType: FRIEND
+                      status: ANALYZING
+                    checkIn:
+                      checkInId: 0198c8a7-3000-7000-8000-000000000004
+                      weekStart: "2026-08-17"
+                      answers:
+                        - questionCode: RELATIONSHIP_FEELING
+                          score: 6
+                        - questionCode: CONVERSATION_COMFORT
+                          score: 4
+                  file: conversation.ndjson.gz
       responses:
         "200":
           description: PRQC 분석 완료
@@ -329,6 +358,10 @@ components:
     MultipartAnalysisRequest:
       type: object
       additionalProperties: false
+      description: |
+        백엔드의 현재 HTTP 분석 요청 형식. CSV 원본이 아니라 서버에서 파싱한 메시지를
+        `messageId`, `sender`, `sentAt`, `text` 필드의 NDJSON으로 직렬화한 뒤 gzip으로
+        압축해 file 파트에 담는다. context 파트는 application/json으로 전송한다.
       required:
         - analysisId
         - relationshipType
