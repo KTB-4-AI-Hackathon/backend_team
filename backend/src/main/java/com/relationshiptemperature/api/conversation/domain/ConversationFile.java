@@ -89,6 +89,11 @@ public class ConversationFile extends BaseEntity {
         this.conversationEndedAt = endedAt;
     }
 
+    public void participants(String selfParticipantName, String otherParticipantName) {
+        this.selfParticipantName = selfParticipantName;
+        this.otherParticipantName = otherParticipantName;
+    }
+
     public void markRawDeleted(Instant deletedAt) {
         this.storageKey = null;
         this.rawDeletedAt = deletedAt;

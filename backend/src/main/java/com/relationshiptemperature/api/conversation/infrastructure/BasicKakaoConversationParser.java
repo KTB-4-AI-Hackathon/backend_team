@@ -3,6 +3,7 @@ package com.relationshiptemperature.api.conversation.infrastructure;
 import com.relationshiptemperature.api.common.error.ApiException;
 import com.relationshiptemperature.api.common.error.ErrorCode;
 import com.relationshiptemperature.api.conversation.application.KakaoConversationParser;
+import com.relationshiptemperature.api.conversation.application.ConversationParseException;
 import com.relationshiptemperature.api.conversation.application.ParsedConversation;
 import com.relationshiptemperature.api.conversation.domain.ConversationParticipantRole;
 import java.io.BufferedReader;
@@ -134,8 +135,11 @@ public class BasicKakaoConversationParser implements KakaoConversationParser {
         for (RawMessage message : rawMessages) {
             participants.add(message.senderName());
         }
+        if (participants.size() > 2) {
+            throw new ConversationParseException(ErrorCode.GROUP_CHAT_NOT_SUPPORTED);
+        }
         if (participants.size() != 2 || !participants.contains(selfParticipantName)) {
-            throw invalidExport();
+            throw new ConversationParseException(ErrorCode.SELF_PARTICIPANT_MISMATCH);
         }
         String otherParticipantName = participants.stream()
                 .filter(name -> !name.equals(selfParticipantName))

@@ -88,7 +88,7 @@ app:
     timeout: ${AI_TIMEOUT:90s}
   upload:
     max-bytes: 52428800
-    allowed-extensions: [txt]
+    allowed-extensions: [txt, csv]
   retention:
     raw-conversation: ${RAW_CONVERSATION_RETENTION:24h}
     cleanup-cron: ${RETENTION_CLEANUP_CRON:0 15 * * * *}

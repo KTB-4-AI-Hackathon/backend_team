@@ -12,6 +12,8 @@ public interface ConversationFileRepository extends JpaRepository<ConversationFi
 
     Optional<ConversationFile> findByIdAndUserId(UUID id, UUID userId);
 
+    Optional<ConversationFile> findByRelationshipIdAndSha256(UUID relationshipId, String sha256);
+
     Optional<ConversationFile> findByIdAndUserIdAndRelationshipIdAndValidationStatus(
             UUID id,
             UUID userId,
