@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
-import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,9 +35,8 @@ public class BasicKakaoConversationParser implements KakaoConversationParser {
             "^(\\d{4})년\\s+(\\d{1,2})월\\s+(\\d{1,2})일\\s+(\\S+)$"
     );
     private static final Pattern MESSAGE = Pattern.compile(
-            "^(오전|오후)\\s+(\\d{1,2}):(\\d{2})\\s+(\\S+)\\s+(.+)$"
+            "^(오전|오후)\\s+(\\d{1,2}):(\\d{2})\\s+(\\S+)\\s(.*)$"
     );
-    private static final Pattern TIME_PREFIX = Pattern.compile("^(오전|오후)\\s+");
 
     @Override
     public ParsedConversation parse(InputStream inputStream, String selfParticipantName) throws IOException {
@@ -74,9 +72,6 @@ public class BasicKakaoConversationParser implements KakaoConversationParser {
                                 new StringBuilder(messageMatcher.group(5))
                         );
                         continue;
-                    }
-                    if (TIME_PREFIX.matcher(line).find()) {
-                        throw invalidExport();
                     }
                     if (pending == null) {
                         if (!line.isBlank()) {

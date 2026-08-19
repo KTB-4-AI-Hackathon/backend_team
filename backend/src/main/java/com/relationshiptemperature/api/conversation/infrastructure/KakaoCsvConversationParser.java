@@ -21,7 +21,6 @@ import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -49,8 +48,11 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
                     Reader reader = new InputStreamReader(stripUtf8Bom(inputStream), StandardCharsets.UTF_8);
                     CSVParser csv = CSVParser.parse(reader, CSV_FORMAT)
             ) {
-                validateHeader(csv.getHeaderMap());
+                validateHeader(csv.getHeaderNames());
                 for (CSVRecord record : csv) {
+                    if (record.size() != 3) {
+                        throw invalidExport();
+                    }
                     rawMessages.add(new RawMessage(
                             parseSentAt(record.get("Date")),
                             normalizedName(record.get("User")),
@@ -76,8 +78,8 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
         return stream;
     }
 
-    private void validateHeader(Map<String, Integer> headerMap) {
-        if (!headerMap.keySet().containsAll(List.of("Date", "User", "Message"))) {
+    private void validateHeader(List<String> headerNames) {
+        if (!headerNames.equals(List.of("Date", "User", "Message"))) {
             throw invalidExport();
         }
     }

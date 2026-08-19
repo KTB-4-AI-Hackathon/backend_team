@@ -63,6 +63,33 @@ class KakaoCsvConversationParserTest {
     }
 
     @Test
+    void rejectsCsvWithAnExtraHeaderColumn() {
+        assertInvalidCsv("""
+                Date,User,Message,Attachment
+                2026-08-19 19:23:00,강명진,안녕,
+                2026-08-19 19:24:00,이진우,반가워,
+                """);
+    }
+
+    @Test
+    void rejectsCsvWithDuplicateHeaderColumns() {
+        assertInvalidCsv("""
+                Date,User,Message,Message
+                2026-08-19 19:23:00,강명진,안녕,중복
+                2026-08-19 19:24:00,이진우,반가워,중복
+                """);
+    }
+
+    @Test
+    void rejectsCsvWithAnExtraRecordField() {
+        assertInvalidCsv("""
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕,여분
+                2026-08-19 19:24:00,이진우,반가워
+                """);
+    }
+
+    @Test
     void routesCsvInputByExtension() throws Exception {
         ConversationParserRouter router = new ConversationParserRouter(
                 new KakaoCsvConversationParser(), new BasicKakaoConversationParser()
@@ -81,5 +108,12 @@ class KakaoCsvConversationParserTest {
 
     private ByteArrayInputStream input(String content) {
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void assertInvalidCsv(String content) {
+        assertThatThrownBy(() -> parser.parse(input(content), "강명진"))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).errorCode())
+                .isEqualTo(ErrorCode.INVALID_KAKAO_EXPORT);
     }
 }

@@ -47,6 +47,34 @@ class BasicKakaoConversationParserTest {
     }
 
     @Test
+    void preservesContinuationLineBeginningWithKoreanMeridiem() throws Exception {
+        String content = """
+                2026년 8월 19일 수요일
+                오후 7:23 강명진 첫 줄
+                오후 이 문장은 새 메시지 헤더가 아니야
+                오후 7:24 이진우 확인했어
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.messages().getFirst().content())
+                .isEqualTo("첫 줄\n오후 이 문장은 새 메시지 헤더가 아니야");
+    }
+
+    @Test
+    void preservesContentLeadingWhitespaceAfterTheSenderDelimiter() throws Exception {
+        String content = """
+                2026년 8월 19일 수요일
+                오후 7:23 강명진  첫 글자 앞 공백
+                오후 7:24 이진우 확인했어
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.messages().getFirst().content()).isEqualTo(" 첫 글자 앞 공백");
+    }
+
+    @Test
     void rejectsTxtConversationWhenSelfParticipantIsAbsent() {
         assertInvalid("""
                 2026년 8월 19일 수요일
