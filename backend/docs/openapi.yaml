@@ -371,6 +371,41 @@ paths:
   /relationships/{relationshipId}/check-ins:
     parameters:
       - $ref: "#/components/parameters/RelationshipId"
+    get:
+      tags: [Check-ins]
+      operationId: listCheckIns
+      summary: 관계별 주차 체크인 이력 조회
+      description: 주차 시작일(월요일) 기준 최신순으로 반환한다.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: 조회할 주차 시작일의 최솟값(포함)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: 조회할 주차 시작일의 최댓값(포함)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: 체크인 이력 조회 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [Check-ins]
       operationId: createCheckIn
@@ -386,7 +421,13 @@ paths:
               $ref: "#/components/schemas/CreateCheckInRequest"
       responses:
         "201":
-          description: 체크인 저장 완료
+          description: 해당 주차 체크인 최초 저장 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInEnvelope"
+        "200":
+          description: 해당 주차의 기존 체크인 갱신 완료
           content:
             application/json:
               schema:
@@ -1215,7 +1256,7 @@ components:
     CheckIn:
       type: object
       additionalProperties: false
-      required: [id, relationshipId, answers, weekStart, createdAt]
+      required: [id, relationshipId, answers, weekStart, createdAt, updatedAt]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
@@ -1230,12 +1271,24 @@ components:
           format: date
         createdAt:
           $ref: "#/components/schemas/DateTime"
+        updatedAt:
+          $ref: "#/components/schemas/DateTime"
     CheckInEnvelope:
       type: object
       required: [data]
       properties:
         data:
           $ref: "#/components/schemas/CheckIn"
+    CheckInListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckIn"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
 
     StartAnalysisRequest:
       type: object

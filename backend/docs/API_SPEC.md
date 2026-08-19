@@ -253,6 +253,7 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
 | GET | `/conversation-files/{fileId}` | 업로드 검증 상태 조회 |
 | DELETE | `/conversation-files/{fileId}` | 미사용/업로드 파일 삭제 |
 | POST | `/relationships/{relationshipId}/check-ins` | 체크인 응답 저장 |
+| GET | `/relationships/{relationshipId}/check-ins` | 관계별·주차별 체크인 이력 조회 |
 | POST | `/relationships/{relationshipId}/analyses` | 분석 작업 시작 |
 | GET | `/analysis-jobs/{jobId}` | 분석 진행률/결과 조회 |
 | GET | `/relationships/{relationshipId}/report` | 인물별 PRQC 리포트 조회 |
@@ -521,9 +522,21 @@ MVP 질문:
 | `RELATIONSHIP_FEELING` | 요즘 이 사람과의 관계, 어떻게 느껴지세요? | 많이 불편해요 | 매우 좋아요 |
 | `CONVERSATION_COMFORT` | 최근 이 사람과 대화할 때 얼마나 편안함을 느끼시나요? | 전혀 편안하지 않아요 | 매우 편안해요 |
 
-응답: `201 Created` + `CheckIn` 객체.
+서버는 사용자 타임존의 제출일이 속한 월요일을 `weekStart`로 계산한다. 같은 관계와
+같은 주차에는 체크인을 하나만 유지한다.
 
-같은 관계/같은 주차에 다시 제출하면 새 이력을 추가하기보다 최신 응답을 갱신하는 정책을 권장한다. API 구현은 `409 CHECK_IN_ALREADY_EXISTS`와 기존 ID를 반환하거나, 별도 `PUT`으로 갱신하도록 선택할 수 있다. OpenAPI 초안은 새 기록 생성을 기준으로 한다.
+- 해당 주차의 최초 제출: `201 Created` + `CheckIn` 객체
+- 같은 주차 재제출: 기존 체크인 ID와 `createdAt`은 유지하고 두 응답을 갱신한 뒤
+  `200 OK` + `CheckIn` 객체
+- 두 질문은 각각 정확히 한 번 포함해야 하며, 누락·중복은
+  `422 CHECK_IN_INCOMPLETE`, 1~7 범위 위반은 `400 INVALID_REQUEST`
+
+`GET /relationships/{relationshipId}/check-ins?from=2026-08-01&to=2026-08-31`
+
+관계의 주차별 체크인 이력을 `weekStart` 최신순으로 조회한다. `from`과 `to`는 모두
+선택 사항이며 각 경곗값을 포함한다. 두 값이 모두 있고 `from > to`이면
+`400 INVALID_REQUEST`를 반환한다. 현재 데이터 규모에서는 단일 페이지 응답을 사용하며
+`meta.hasNext`는 `false`다.
 
 MVP에서 체크인은 분석 시점의 사용자 주관 신호를 보존하기 위한 별도 데이터다. `checkInId`는 분석 Job 및 리포트와 연결하지만 체크인 응답을 AI 서버에 전달하지 않으며 PRQC 6요소와 `overall.score` 산식에도 반영하지 않는다. 향후 결합 점수를 도입할 때는 새로운 `scoringPolicyVersion`으로 명시한다.
 
