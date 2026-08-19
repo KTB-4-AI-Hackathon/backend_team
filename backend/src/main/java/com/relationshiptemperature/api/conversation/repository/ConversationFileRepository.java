@@ -19,5 +19,10 @@ public interface ConversationFileRepository extends JpaRepository<ConversationFi
             ConversationFileStatus status
     );
 
+    Optional<ConversationFile> findFirstByRelationshipIdAndValidationStatusOrderByCreatedAtDesc(
+            UUID relationshipId,
+            ConversationFileStatus status
+    );
+
     List<ConversationFile> findAllByExpiresAtBeforeAndRawDeletedAtIsNull(Instant expiresAt);
 }

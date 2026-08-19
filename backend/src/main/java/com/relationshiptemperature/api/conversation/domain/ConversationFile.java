@@ -54,6 +54,12 @@ public class ConversationFile extends BaseEntity {
     @Column(name = "raw_deleted_at")
     private Instant rawDeletedAt;
 
+    @Column(name = "self_participant_name", length = 100)
+    private String selfParticipantName;
+
+    @Column(name = "other_participant_name", length = 100)
+    private String otherParticipantName;
+
     protected ConversationFile() {
     }
 
@@ -100,4 +106,6 @@ public class ConversationFile extends BaseEntity {
     public Instant getConversationEndedAt() { return conversationEndedAt; }
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getRawDeletedAt() { return rawDeletedAt; }
+    public String getSelfParticipantName() { return selfParticipantName; }
+    public String getOtherParticipantName() { return otherParticipantName; }
 }
