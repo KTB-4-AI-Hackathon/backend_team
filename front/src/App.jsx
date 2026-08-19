@@ -1,0 +1,34 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Starfield from './components/Starfield';
+import AppLayout from './components/AppLayout';
+import LoginPage from './pages/LoginPage';
+import ConsentPage from './pages/ConsentPage';
+import DashboardPage from './pages/DashboardPage';
+import ReportPage from './pages/ReportPage';
+import ChatPage from './pages/ChatPage';
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Starfield />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/consent" element={<ConsentPage />} />
+
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/report" element={<ReportPage />} />
+            <Route path="/report/:id" element={<ReportPage />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:id" element={<ChatPage />} />
+          </Route>
+
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

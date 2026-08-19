@@ -1,0 +1,88 @@
+const cx = 130;
+const cy = 128;
+const maxR = 100;
+// Mirrors the dashboard's "needsAttention" rule (score < 60) so the radar's
+// dashed ring lines up with the same threshold used elsewhere in the app.
+const ATTENTION_THRESHOLD = 60;
+
+function polar(r, i, n) {
+  const angle = ((i * 360) / n - 90) * (Math.PI / 180);
+  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+}
+
+export default function RadarChart({ values, labels }) {
+  const n = values.length;
+  const rings = [0.25, 0.5, 0.75, 1].map((f, ri) => {
+    const pts = Array.from({ length: n }, (_, i) => polar(maxR * f, i, n).join(',')).join(' ');
+    return (
+      <polygon key={ri} points={pts} fill="none" stroke="rgba(196,182,255,0.16)" strokeWidth="1" />
+    );
+  });
+
+  const axes = Array.from({ length: n }, (_, i) => {
+    const [x, y] = polar(maxR, i, n);
+    return (
+      <line
+        key={i}
+        x1={cx}
+        y1={cy}
+        x2={x.toFixed(1)}
+        y2={y.toFixed(1)}
+        stroke="rgba(196,182,255,0.14)"
+      />
+    );
+  });
+
+  const cutR = maxR * (ATTENTION_THRESHOLD / 100);
+  const cutPts = Array.from({ length: n }, (_, i) => polar(cutR, i, n).join(',')).join(' ');
+
+  const dataPts = values.map((v, i) => polar((maxR * v) / 100, i, n));
+  const dataPoly = dataPts.map((p) => p.join(',')).join(' ');
+
+  return (
+    <svg viewBox="0 0 260 256" style={{ width: '100%', height: 'auto' }}>
+      {rings}
+      <polygon
+        points={cutPts}
+        fill="none"
+        stroke="var(--accent-amber)"
+        strokeWidth="1.4"
+        strokeDasharray="4 3"
+        opacity="0.85"
+      />
+      {axes}
+      <polygon points={dataPoly} fill="rgba(226,160,201,0.28)" stroke="var(--accent-pink)" strokeWidth="2" />
+      {dataPts.map((p, i) => {
+        const low = values[i] < ATTENTION_THRESHOLD;
+        return (
+          <circle
+            key={i}
+            cx={p[0].toFixed(1)}
+            cy={p[1].toFixed(1)}
+            r="4"
+            fill={low ? 'var(--accent-amber)' : 'var(--accent-pink)'}
+            stroke={low ? '#2a1638' : 'none'}
+          />
+        );
+      })}
+      {labels.map((label, i) => {
+        const [x, y] = polar(maxR + 22, i, n);
+        const anchor = Math.abs(x - cx) < 6 ? 'middle' : x > cx ? 'start' : 'end';
+        return (
+          <text
+            key={label}
+            x={x.toFixed(1)}
+            y={y.toFixed(1)}
+            textAnchor={anchor}
+            dominantBaseline="middle"
+            fontSize="11.5"
+            fontWeight="700"
+            fill="var(--text-secondary)"
+          >
+            {label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}

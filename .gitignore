@@ -9,9 +9,9 @@ data/
 uploads/
 logs/
 tmp/
-# 프론트엔드는 이 저장소에서 함께 관리한다. 의존성·빌드 산출물만 제외한다.
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
-# 컨테이너나 로컬 pnpm이 만드는 캐시
-frontend/.pnpm-store/
+# 프론트엔드(front/)는 이 저장소에서 함께 관리한다. 의존성·빌드 산출물만 제외한다.
+front/node_modules/
+front/dist/
+front/.vite/
+# 위 data/ 규칙은 백엔드 런타임 업로드 디렉토리용이라 front/src/data 소스 폴더는 제외 대상에서 뺀다.
+!front/src/data/
