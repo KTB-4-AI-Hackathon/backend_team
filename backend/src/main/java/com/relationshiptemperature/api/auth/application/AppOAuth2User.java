@@ -1,5 +1,6 @@
 package com.relationshiptemperature.api.auth.application;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -11,7 +12,7 @@ public record AppOAuth2User(
         String name,
         Map<String, Object> attributes,
         Collection<? extends GrantedAuthority> authorities
-) implements OAuth2User {
+) implements OAuth2User, Serializable {
 
     @Override
     public Map<String, Object> getAttributes() {

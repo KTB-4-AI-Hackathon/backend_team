@@ -20,7 +20,7 @@ public class KakaoOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User delegate = super.loadUser(userRequest);
-        String subject = String.valueOf(delegate.getAttribute("id"));
+        String subject = stringValue(delegate.getAttribute("id"), null);
         Map<String, Object> account = map(delegate.getAttribute("kakao_account"));
         Map<String, Object> profile = map(account.get("profile"));
         String nickname = stringValue(profile.get("nickname"), "카카오 사용자");
