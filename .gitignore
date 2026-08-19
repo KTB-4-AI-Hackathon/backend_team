@@ -13,3 +13,5 @@ tmp/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+# 컨테이너나 로컬 pnpm이 만드는 캐시
+frontend/.pnpm-store/

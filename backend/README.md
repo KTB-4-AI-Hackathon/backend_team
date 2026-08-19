@@ -31,10 +31,14 @@ Kakao login: http://localhost:8080/api/v1/auth/kakao/authorize
 
 PostgreSQL 실행:
 
+compose.yaml은 저장소 루트에 있다.
+
 ```bash
-docker compose up -d postgres
+(cd .. && docker compose up -d postgres)
 SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
 ```
+
+전체 실행 방법은 [루트 README](../README.md)를 참고한다.
 
 운영 환경값은 [`.env.example`](./.env.example)을 기준으로 설정한다. 실제 비밀값을 저장소에 커밋하지 않는다.
 
