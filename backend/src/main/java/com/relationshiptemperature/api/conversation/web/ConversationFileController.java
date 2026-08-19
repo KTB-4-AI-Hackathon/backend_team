@@ -35,14 +35,17 @@ public class ConversationFileController {
     ResponseEntity<ApiResponse<ConversationFileResponse>> upload(
             @PathVariable UUID relationshipId,
             @RequestPart MultipartFile file,
-            @RequestParam(defaultValue = "KAKAO_TALK") String source
+            @RequestParam(defaultValue = "") String source,
+            @RequestParam(required = false) String selfParticipantName
     ) {
         if (!"KAKAO_TALK".equals(source)) {
             throw new com.relationshiptemperature.api.common.error.ApiException(
                     com.relationshiptemperature.api.common.error.ErrorCode.UNSUPPORTED_FILE_TYPE
             );
         }
-        ConversationFile uploaded = fileService.upload(currentUserService.requireUserId(), relationshipId, file);
+        ConversationFile uploaded = fileService.upload(
+                currentUserService.requireUserId(), relationshipId, file, selfParticipantName
+        );
         return ResponseEntity.created(URI.create("/api/v1/conversation-files/" + uploaded.getId()))
                 .body(ApiResponse.of(ConversationFileResponse.from(uploaded)));
     }
@@ -66,6 +69,8 @@ public class ConversationFileController {
             String originalFileName,
             long sizeBytes,
             String source,
+            String selfParticipantName,
+            String otherParticipantName,
             ConversationFileStatus validationStatus,
             Integer messageCount,
             Instant conversationStartedAt,
@@ -76,7 +81,8 @@ public class ConversationFileController {
         static ConversationFileResponse from(ConversationFile file) {
             return new ConversationFileResponse(
                     file.getId(), file.getRelationshipId(), file.getOriginalFileName(), file.getSizeBytes(),
-                    "KAKAO_TALK", file.getValidationStatus(), file.getMessageCount(),
+                    "KAKAO_TALK", file.getSelfParticipantName(), file.getOtherParticipantName(),
+                    file.getValidationStatus(), file.getMessageCount(),
                     file.getConversationStartedAt(), file.getConversationEndedAt(), file.getExpiresAt(), file.getCreatedAt()
             );
         }

@@ -135,3 +135,40 @@
 - [x] 관계 체크인 저장
 - [x] 관계 리포트 및 분석 근거 생성
 - [x] 메인 대시보드 집계 API
+- [x] AI 상담 및 MongoDB 저장
+
+## 5. AI 상담 기능 및 MongoDB 전환
+
+- 상태: 완료
+- API:
+  - 상담방 생성·목록·상세·삭제: `/api/v1/consultations`
+  - 메시지 저장·조회: `/api/v1/consultations/{consultationId}/messages`
+  - AI 답변 스트림: `GET /api/v1/consultations/{consultationId}/events?after={userMessageId}`
+- 저장소:
+  - PostgreSQL: 사용자·관계·관계 리포트·PRQC·관찰 근거
+  - MongoDB `consultations`: 사용자/관계/리포트 연결, 최근 메시지 미리보기
+  - MongoDB `chat_messages`: 사용자·AI 메시지, 생성 상태, 근거 참조, 안전 제안
+- 구현 내용:
+  - 상담 생성 시 가장 최근 관계 리포트 ID를 상담방 컨텍스트로 고정
+  - AI 호출 시 종합점수·전주 변화·PRQC 6개 항목·관찰 근거·최근 완료 대화 최대 20개 전달
+  - 동일 상담방에서 AI 답변 동시 생성을 한 건으로 제한
+  - 사용자 메시지와 `GENERATING` AI 메시지를 먼저 저장한 뒤 비동기로 답변 생성
+  - `assistant.started`, `assistant.delta`, `assistant.completed`, `assistant.failed`, `heartbeat` SSE 이벤트 지원
+  - POST 직후 빠르게 답변이 끝나도 MongoDB의 최종 메시지를 SSE 구독 시 재전송하여 이벤트 유실 방지
+  - AI 최종 답변, 근거 참조, 구조화 안전 제안을 MongoDB에 저장
+  - AI 실패 상태를 저장하고 재시도 가능 오류 이벤트 반환
+  - MongoDB Docker Compose 서비스, 인증 URI, 자동 복합 인덱스 구성
+- 자동 검증:
+  - 상담 서비스의 리포트 컨텍스트 조합, 메시지 저장, 동시 생성 거부 테스트
+  - AI 답변·근거·안전 제안 저장 및 상담방 미리보기 갱신 테스트
+  - 프로젝트 전체 회귀 테스트 통과
+  - 실제 MongoDB 8.0 인증 연결 및 `consultations`, `chat_messages` 컬렉션 생성 확인
+  - 사용자/최종 수정 시각 및 상담방/생성 시각 복합 인덱스 생성 확인
+  - 애플리케이션 18080 포트 기동 및 Actuator health `UP` 확인
+- Postman 확인:
+  1. 저장소 루트에서 `docker compose up -d postgres mongo`로 두 저장소를 시작한다.
+  2. 로그인 세션과 CSRF 토큰으로 리포트가 있는 관계의 상담방을 생성한다.
+  3. 메시지 전송 응답의 `streamUrl`을 확인한다.
+  4. Postman에서 별도 `GET streamUrl` 요청을 열고 `Accept: text/event-stream`으로 이벤트를 확인한다.
+  5. 완료 후 메시지 조회에서 AI 본문·`evidenceRefs`·`safetyNotice`가 유지되는지 확인한다.
+  6. AI 생성 중 다시 메시지를 보내 `409 CHAT_ALREADY_GENERATING`을 확인한다.

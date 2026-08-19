@@ -17,7 +17,13 @@ public record AppProperties(
 
     public record Ai(String mode, String baseUrl, String serviceToken, Duration timeout) {}
 
-    public record Upload(long maxBytes, Set<String> allowedExtensions) {}
+    public record Upload(long maxBytes, Set<String> allowedExtensions) {
+        public Upload {
+            allowedExtensions = allowedExtensions.stream()
+                    .map(extension -> extension.toLowerCase(java.util.Locale.ROOT))
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        }
+    }
 
     public record Retention(Duration rawConversation) {}
 }

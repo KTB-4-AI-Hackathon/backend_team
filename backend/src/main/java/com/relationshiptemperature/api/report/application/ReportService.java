@@ -92,6 +92,11 @@ public class ReportService {
                 .orElseThrow(() -> new ApiException(ErrorCode.REPORT_REQUIRED));
     }
 
+    public RelationshipReport getOwned(UUID userId, UUID reportId) {
+        return reportRepository.findByIdAndUserId(reportId, userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.REPORT_REQUIRED));
+    }
+
     public List<RelationshipReport> trend(UUID userId, UUID relationshipId, int weeks) {
         if (weeks < 4 || weeks > 52) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "추이 조회 기간은 4주에서 52주 사이여야 합니다.");

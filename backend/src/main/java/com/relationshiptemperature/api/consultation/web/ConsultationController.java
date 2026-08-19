@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -69,7 +71,7 @@ public class ConsultationController {
     }
 
     @GetMapping("/{consultationId}")
-    ApiResponse<ConsultationResponse> get(@PathVariable UUID consultationId) {
+    ApiResponse<ConsultationResponse> get(@PathVariable String consultationId) {
         UUID userId = currentUserService.requireUserId();
         Consultation consultation = consultationService.getOwned(userId, consultationId);
         return ApiResponse.of(response(
@@ -79,13 +81,13 @@ public class ConsultationController {
     }
 
     @DeleteMapping("/{consultationId}")
-    ResponseEntity<Void> delete(@PathVariable UUID consultationId) {
+    ResponseEntity<Void> delete(@PathVariable String consultationId) {
         consultationService.delete(currentUserService.requireUserId(), consultationId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{consultationId}/messages")
-    PagedResponse<MessageResponse> messages(@PathVariable UUID consultationId) {
+    PagedResponse<MessageResponse> messages(@PathVariable String consultationId) {
         return PagedResponse.singlePage(consultationService.messages(
                 currentUserService.requireUserId(), consultationId
         ).stream().map(MessageResponse::from).toList());
@@ -93,7 +95,7 @@ public class ConsultationController {
 
     @PostMapping("/{consultationId}/messages")
     ResponseEntity<ApiResponse<MessageAcceptedResponse>> send(
-            @PathVariable UUID consultationId,
+            @PathVariable String consultationId,
             @Valid @RequestBody CreateMessageRequest request
     ) {
         ConsultationService.AcceptedMessage accepted = consultationService.send(
@@ -107,16 +109,20 @@ public class ConsultationController {
     }
 
     @GetMapping(path = "/{consultationId}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    SseEmitter events(@PathVariable UUID consultationId) {
+    SseEmitter events(
+            @PathVariable String consultationId,
+            @RequestParam String after,
+            @RequestHeader(name = "Last-Event-ID", required = false) String lastEventId
+    ) {
         consultationService.getOwned(currentUserService.requireUserId(), consultationId);
-        return chatStreamService.subscribe(consultationId);
+        return chatStreamService.subscribe(consultationId, after);
     }
 
     record CreateConsultationRequest(@NotNull UUID relationshipId) {}
     record CreateMessageRequest(@NotBlank @Size(max = 4000) String content) {}
     record RelationshipIdentity(UUID id, String name, String initial, String relationshipType) {}
     record ConsultationResponse(
-            UUID id,
+            String id,
             RelationshipIdentity relationship,
             UUID reportId,
             String lastMessagePreview,
@@ -125,21 +131,33 @@ public class ConsultationController {
             Instant createdAt,
             Instant updatedAt
     ) {}
-    record SafetyNotice(String type, String title, String message) {}
+    record EvidenceReference(String evidenceId, String label) {}
+    record ResourceQuery(String category, String region) {}
+    record SafetyNotice(String type, String title, String message, ResourceQuery resourceQuery) {}
     record MessageResponse(
-            UUID id,
+            String id,
             ChatRole role,
             String content,
             MessageStatus status,
+            List<EvidenceReference> evidenceRefs,
             SafetyNotice safetyNotice,
             Instant createdAt
     ) {
         static MessageResponse from(ChatMessage message) {
-            SafetyNotice notice = message.getSafetyNoticeType() == null ? null : new SafetyNotice(
-                    message.getSafetyNoticeType(), "마음을 돌보는 제안", message.getSafetyNoticeMessage()
+            SafetyNotice notice = message.getSafetyNotice() == null ? null : new SafetyNotice(
+                    message.getSafetyNotice().type(), message.getSafetyNotice().title(),
+                    message.getSafetyNotice().message(),
+                    message.getSafetyNotice().resourceQuery() == null ? null : new ResourceQuery(
+                            message.getSafetyNotice().resourceQuery().category(),
+                            message.getSafetyNotice().resourceQuery().region()
+                    )
             );
             return new MessageResponse(
-                    message.getId(), message.getRole(), message.getContent(), message.getStatus(), notice,
+                    message.getId(), message.getRole(), message.getContent(), message.getStatus(),
+                    message.getEvidenceRefs().stream()
+                            .map(item -> new EvidenceReference(item.evidenceId(), item.label()))
+                            .toList(),
+                    notice,
                     message.getCreatedAt()
             );
         }

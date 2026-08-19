@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: 관계온도 백엔드-AI 내부 API
   version: 1.0.0
-  summary: 정규화 대화 기반 동기 PRQC 분석 계약
+  summary: PRQC 분석 및 관계 리포트 기반 AI 상담 계약
   description: |
     Backend Worker가 AI 서버에 정규화된 1:1 대화를 전달하고 PRQC 6개 구성요소와
     구조화 근거를 한 번에 받는 내부 API다. 프론트엔드는 호출하지 않는다.
@@ -15,6 +15,7 @@ servers:
     description: Private network internal API
 tags:
   - name: PRQC Analyses
+  - name: Consultation Answers
 security:
   - serviceBearer: []
 paths:
@@ -100,6 +101,40 @@ paths:
           $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
+  /consultation-answers:
+    post:
+      tags: [Consultation Answers]
+      operationId: createConsultationAnswer
+      summary: 관계 리포트 컨텍스트 기반 AI 상담 답변 생성
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationAnswerRequest"
+      responses:
+        "200":
+          description: 구조화 AI 상담 답변
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationAnswerResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -407,6 +442,124 @@ components:
         completedAt:
           type: string
           format: date-time
+    ConsultationEvidenceContext:
+      type: object
+      additionalProperties: false
+      required: [evidenceId, component, score, summary]
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        component:
+          type: string
+          enum: [satisfaction, commitment, intimacy, trust, passion, love]
+        score:
+          $ref: "#/components/schemas/Score"
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 1000
+    ConsultationHistoryMessage:
+      type: object
+      additionalProperties: false
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [USER, ASSISTANT]
+        content:
+          type: string
+          minLength: 1
+          maxLength: 20000
+    ConsultationAnswerRequest:
+      type: object
+      additionalProperties: false
+      required: [reportId, overallScore, prqc, evidences, recentMessages, userMessage]
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        overallScore:
+          $ref: "#/components/schemas/Score"
+        scoreChange:
+          type: [integer, "null"]
+          minimum: -100
+          maximum: 100
+        prqc:
+          $ref: "#/components/schemas/PrqcComponents"
+        evidences:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ConsultationEvidenceContext"
+        recentMessages:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ConsultationHistoryMessage"
+        userMessage:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    ConsultationEvidenceReference:
+      type: object
+      additionalProperties: false
+      required: [evidenceId, label]
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+    ConsultationResourceQuery:
+      type: object
+      additionalProperties: false
+      required: [category, region]
+      properties:
+        category:
+          type: string
+          enum: [MENTAL_HEALTH_COUNSELING, RELATIONSHIP_COUNSELING, CRISIS_SUPPORT]
+        region:
+          type: string
+          const: KR
+    ConsultationSafetyNotice:
+      type: object
+      additionalProperties: false
+      required: [type, title, message, resourceQuery]
+      properties:
+        type:
+          type: string
+          enum: [SUPPORT_RECOMMENDATION, CRISIS_SUPPORT]
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        resourceQuery:
+          $ref: "#/components/schemas/ConsultationResourceQuery"
+    ConsultationAnswerResponse:
+      type: object
+      additionalProperties: false
+      required: [content, evidenceRefs, safetyNotice]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        evidenceRefs:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ConsultationEvidenceReference"
+        safetyNotice:
+          oneOf:
+            - $ref: "#/components/schemas/ConsultationSafetyNotice"
+            - type: "null"
     InternalErrorDetail:
       type: object
       additionalProperties: false

@@ -8,8 +8,8 @@
 - Spring Boot 4.1.0
 - Gradle Wrapper 9.5.1
 - Spring MVC, Security, OAuth2 Client, Session JDBC
-- Spring Data JPA, Flyway
-- PostgreSQL 운영 DB / H2 로컬·테스트 DB
+- Spring Data JPA, Flyway, Spring Data MongoDB
+- PostgreSQL 운영 DB / H2 로컬·테스트 DB / MongoDB 상담 데이터 저장소
 - `RestClient` 기반 AI 내부 호출
 - `SseEmitter` 기반 AI 상담 스트리밍
 
@@ -29,12 +29,12 @@ Health: http://localhost:8080/actuator/health
 Kakao login: http://localhost:8080/api/v1/auth/kakao/authorize
 ```
 
-PostgreSQL 실행:
+PostgreSQL과 MongoDB 실행:
 
 compose.yaml은 저장소 루트에 있다.
 
 ```bash
-(cd .. && docker compose up -d postgres)
+(cd .. && docker compose up -d postgres mongo)
 SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
 ```
 
@@ -53,7 +53,7 @@ com.relationshiptemperature.api
 ├── analysis      비동기 Job, AI Port/Adapter, 재시도
 ├── report        PRQC, 근거, 종합점수 정책
 ├── dashboard     주간 집계
-├── consultation  상담방, 메시지, SSE
+├── consultation  MongoDB 상담방·메시지, 리포트 컨텍스트, SSE
 ├── support       검수된 상담 리소스
 ├── retention     원본 대화 만료 삭제
 ├── common        공통 응답, 오류, 요청 ID, JPA 기반
@@ -114,7 +114,7 @@ com.relationshiptemperature.api
 - AI PRQC와 백엔드 종합점수 책임 분리
 - 리포트·근거·추이 API
 - 대시보드 집계 API
-- 상담방·메시지·SSE 기본 흐름
+- MongoDB 상담방·메시지 저장, 리포트 컨텍스트 기반 답변, SSE 증분·재연결 복구
 - 지원 리소스 조회
 - 원본 파일 만료 삭제 시 메타데이터·리포트를 보존하는 retention Job
 
@@ -133,8 +133,8 @@ rg 'TODO\(' src/main/java
 - 관계 유형별 PRQC 가중치 확정
 - AI 내부 오류 본문 매핑, `Retry-After`와 jitter
 - 분산 환경용 Queue 및 Worker 실행 보장
-- SSE 이벤트 영속화, `Last-Event-ID` 재연결
-- 상담 AI 실제 Adapter와 근거·안전 제안 매핑
+- 분산 환경에서 SSE 중간 이벤트까지 재생해야 할 경우 Redis Streams 등 이벤트 로그 도입
+- 운영 AI 모델의 `/internal/v1/consultation-answers` 구현과 프롬프트·안전 정책 확정
 - 관계 삭제 시 비동기 삭제 Job 및 모든 외부 저장소 삭제 전파
 - 검수된 실제 전문상담 리소스 데이터
 - rate limit, 감사 로그, 운영 메트릭과 알림
@@ -145,4 +145,3 @@ rg 'TODO\(' src/main/java
 - [공개 OpenAPI](./docs/openapi.yaml)
 - [백엔드-AI 내부 상세 명세](./docs/AI_INTERNAL_API_SPEC.md)
 - [백엔드-AI 내부 OpenAPI](./docs/openapi-ai-internal.yaml)
-

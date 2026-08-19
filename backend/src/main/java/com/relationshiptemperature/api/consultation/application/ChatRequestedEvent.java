@@ -1,6 +1,9 @@
 package com.relationshiptemperature.api.consultation.application;
 
-import java.util.UUID;
-
-public record ChatRequestedEvent(UUID consultationId, UUID reportId, UUID userMessageId, UUID assistantMessageId) {
+public record ChatRequestedEvent(
+        String consultationId,
+        String userMessageId,
+        String assistantMessageId,
+        ChatAiClient.ChatContext context
+) {
 }

@@ -2,6 +2,10 @@ package com.relationshiptemperature.api.consultation.application;
 
 import com.relationshiptemperature.api.common.error.ApiException;
 import com.relationshiptemperature.api.common.error.ErrorCode;
+import com.relationshiptemperature.api.consultation.application.ChatAiClient.ChatContext;
+import com.relationshiptemperature.api.consultation.application.ChatAiClient.EvidenceContext;
+import com.relationshiptemperature.api.consultation.application.ChatAiClient.HistoryMessage;
+import com.relationshiptemperature.api.consultation.application.ChatAiClient.PrqcContext;
 import com.relationshiptemperature.api.consultation.domain.ChatMessage;
 import com.relationshiptemperature.api.consultation.domain.Consultation;
 import com.relationshiptemperature.api.consultation.domain.MessageStatus;
@@ -10,84 +14,123 @@ import com.relationshiptemperature.api.consultation.repository.ConsultationRepos
 import com.relationshiptemperature.api.relationship.application.RelationshipService;
 import com.relationshiptemperature.api.report.application.ReportService;
 import com.relationshiptemperature.api.report.domain.RelationshipReport;
+import com.relationshiptemperature.api.report.domain.RelationshipReport.PrqcScores;
+import com.relationshiptemperature.api.report.domain.ReportEvidence;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 public class ConsultationService {
 
     private final ConsultationRepository consultationRepository;
     private final ChatMessageRepository messageRepository;
     private final RelationshipService relationshipService;
     private final ReportService reportService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ChatStreamService chatStreamService;
 
     public ConsultationService(
             ConsultationRepository consultationRepository,
             ChatMessageRepository messageRepository,
             RelationshipService relationshipService,
             ReportService reportService,
-            ApplicationEventPublisher eventPublisher
+            ChatStreamService chatStreamService
     ) {
         this.consultationRepository = consultationRepository;
         this.messageRepository = messageRepository;
         this.relationshipService = relationshipService;
         this.reportService = reportService;
-        this.eventPublisher = eventPublisher;
+        this.chatStreamService = chatStreamService;
     }
 
-    @Transactional
     public Consultation create(UUID userId, UUID relationshipId) {
         relationshipService.getOwned(userId, relationshipId);
         RelationshipReport report = reportService.latest(userId, relationshipId);
         Consultation consultation = consultationRepository.save(new Consultation(userId, relationshipId, report.getId()));
         ChatMessage initial = messageRepository.save(ChatMessage.assistant(
-                consultation.getId(),
+                consultation.getId(), null,
                 "새로운 상담을 시작했어요. 지금 가장 이야기하고 싶은 관계의 순간을 들려주세요.",
                 MessageStatus.COMPLETED
         ));
-        consultation.updatePreview(initial.getContent(), Instant.now());
-        return consultation;
+        consultation.updatePreview(initial.getContent(), initial.getCreatedAt());
+        return consultationRepository.save(consultation);
     }
 
     public List<Consultation> list(UUID userId) {
-        return consultationRepository.findAllByUserIdOrderByUpdatedAtDesc(userId);
+        return consultationRepository.findAllByUserIdOrderByUpdatedAtDesc(userId.toString());
     }
 
-    public Consultation getOwned(UUID userId, UUID consultationId) {
-        return consultationRepository.findByIdAndUserId(consultationId, userId)
+    public Consultation getOwned(UUID userId, String consultationId) {
+        return consultationRepository.findByIdAndUserId(consultationId, userId.toString())
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    public List<ChatMessage> messages(UUID userId, UUID consultationId) {
+    public List<ChatMessage> messages(UUID userId, String consultationId) {
         getOwned(userId, consultationId);
         return messageRepository.findAllByConsultationIdOrderByCreatedAtAsc(consultationId);
     }
 
-    @Transactional
-    public AcceptedMessage send(UUID userId, UUID consultationId, String content) {
+    public AcceptedMessage send(UUID userId, String consultationId, String content) {
         Consultation consultation = getOwned(userId, consultationId);
-        ChatMessage userMessage = messageRepository.save(ChatMessage.user(consultationId, content.trim()));
+        if (messageRepository.existsByConsultationIdAndStatus(consultationId, MessageStatus.GENERATING)) {
+            throw new ApiException(ErrorCode.CHAT_ALREADY_GENERATING);
+        }
+
+        String normalized = content.trim();
+        ChatContext context = context(consultation, normalized);
+        ChatMessage userMessage = messageRepository.save(ChatMessage.user(consultationId, normalized));
         ChatMessage assistant = messageRepository.save(ChatMessage.assistant(
-                consultationId, "", MessageStatus.GENERATING
+                consultationId, userMessage.getId(), "", MessageStatus.GENERATING
         ));
-        consultation.updatePreview(content.trim(), Instant.now());
-        eventPublisher.publishEvent(new ChatRequestedEvent(
-                consultationId, consultation.getReportId(), userMessage.getId(), assistant.getId()
+        consultation.updatePreview(normalized, Instant.now());
+        consultationRepository.save(consultation);
+
+        chatStreamService.start(new ChatRequestedEvent(
+                consultationId, userMessage.getId(), assistant.getId(), context
         ));
         return new AcceptedMessage(userMessage, assistant);
     }
 
-    @Transactional
-    public void delete(UUID userId, UUID consultationId) {
+    public void delete(UUID userId, String consultationId) {
         Consultation consultation = getOwned(userId, consultationId);
-        messageRepository.deleteAll(messageRepository.findAllByConsultationIdOrderByCreatedAtAsc(consultationId));
+        messageRepository.deleteAllByConsultationId(consultationId);
         consultationRepository.delete(consultation);
+    }
+
+    private ChatContext context(Consultation consultation, String userMessage) {
+        RelationshipReport report = reportService.getOwned(consultation.getUserId(), consultation.getReportId());
+        PrqcScores scores = report.getPrqcScores();
+        List<EvidenceContext> evidences = reportService.evidences(report.getId()).stream()
+                .map(this::evidenceContext)
+                .toList();
+        List<ChatMessage> recent = new ArrayList<>(messageRepository
+                .findTop20ByConsultationIdAndStatusOrderByCreatedAtDesc(
+                        consultation.getId(), MessageStatus.COMPLETED
+                ));
+        Collections.reverse(recent);
+        List<HistoryMessage> history = recent.stream()
+                .map(item -> new HistoryMessage(item.getRole(), item.getContent()))
+                .toList();
+        return new ChatContext(
+                report.getId(), report.getOverallScore(), report.getScoreChange(),
+                new PrqcContext(
+                        scores.satisfaction(), scores.commitment(), scores.intimacy(),
+                        scores.trust(), scores.passion(), scores.love()
+                ),
+                evidences,
+                history,
+                userMessage
+        );
+    }
+
+    private EvidenceContext evidenceContext(ReportEvidence evidence) {
+        return new EvidenceContext(
+                evidence.getId().toString(), evidence.getComponent().apiCode(),
+                evidence.getScore(), evidence.getSummary()
+        );
     }
 
     public record AcceptedMessage(ChatMessage userMessage, ChatMessage assistantMessage) {}

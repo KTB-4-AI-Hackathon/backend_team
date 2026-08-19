@@ -13,6 +13,8 @@ public interface RelationshipReportRepository extends JpaRepository<Relationship
 
     Optional<RelationshipReport> findByAnalysisJobId(UUID analysisJobId);
 
+    Optional<RelationshipReport> findByIdAndUserId(UUID id, UUID userId);
+
     Optional<RelationshipReport> findFirstByRelationshipIdAndWeekStartOrderByAnalyzedAtDesc(
             UUID relationshipId,
             LocalDate weekStart

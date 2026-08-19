@@ -9,10 +9,11 @@
 
 이 문서는 관계온도 백엔드 Worker가 AI 서버에 대화 분석을 요청하는 내부 계약을 정의한다. 프론트엔드는 이 API를 직접 호출하지 않는다.
 
-MVP 내부 API는 하나의 동기 분석 엔드포인트만 제공한다.
+MVP 내부 API는 PRQC 분석과 AI 상담 답변 엔드포인트를 제공한다.
 
 ```http
 POST /internal/v1/prqc-analyses
+POST /internal/v1/consultation-answers
 ```
 
 AI 서버의 책임은 다음으로 제한한다.
@@ -22,6 +23,8 @@ AI 서버의 책임은 다음으로 제한한다.
 - PRQC 6개 구성요소 점수 산출
 - 구성요소별 관찰 근거와 정량 지표 생성
 - 모델 및 프롬프트 버전 반환
+- 백엔드가 전달한 관계 리포트와 최근 상담 이력을 근거로 상담 답변 생성
+- 답변에 사용한 근거 참조와 안전 제안을 구조화해 반환
 
 AI 서버는 다음을 담당하지 않는다.
 
@@ -298,3 +301,71 @@ AI 내부 API는 다음 조건을 만족하면 MVP 완료로 본다.
 7. 원문·URL·토큰 비로깅 검증
 8. 50MB 업로드에서 생성될 수 있는 정규화 데이터 처리 성능 검증
 
+## 10. AI 상담 답변
+
+`POST /internal/v1/consultation-answers`
+
+백엔드는 PostgreSQL의 관계 리포트·관찰 근거와 MongoDB의 최근 완료 메시지 최대 20개를 조합해 AI 서버에 전달한다. 카카오 원문, 사용자 세션, OAuth 토큰은 전달하지 않는다.
+
+요청 예시:
+
+```json
+{
+  "reportId": "0198c8a7-4000-7000-8000-000000000001",
+  "overallScore": 68,
+  "scoreChange": -4,
+  "prqc": {
+    "satisfaction": 65,
+    "commitment": 70,
+    "intimacy": 72,
+    "trust": 60,
+    "passion": 66,
+    "love": 75
+  },
+  "evidences": [
+    {
+      "evidenceId": "0198c8a7-4100-7000-8000-000000000001",
+      "component": "trust",
+      "score": 60,
+      "summary": "최근 응답 간격이 이전 기간보다 길어진 패턴이 관찰됐어요."
+    }
+  ],
+  "recentMessages": [
+    {"role": "USER", "content": "답장이 늦으면 불안해요."},
+    {"role": "ASSISTANT", "content": "어떤 순간에 불안이 커지는지 살펴볼까요?"}
+  ],
+  "userMessage": "제가 먼저 연락해도 괜찮을까요?"
+}
+```
+
+성공 응답:
+
+```json
+{
+  "content": "먼저 연락하는 행동 자체보다 원하는 바를 부담 없이 표현하는 방식이 중요할 수 있어요.",
+  "evidenceRefs": [
+    {
+      "evidenceId": "0198c8a7-4100-7000-8000-000000000001",
+      "label": "최근 응답 간격 변화"
+    }
+  ],
+  "safetyNotice": {
+    "type": "SUPPORT_RECOMMENDATION",
+    "title": "마음을 돌보는 제안",
+    "message": "불안이 일상에 지속적인 영향을 준다면 전문가와 이야기해 보세요.",
+    "resourceQuery": {
+      "category": "MENTAL_HEALTH_COUNSELING",
+      "region": "KR"
+    }
+  }
+}
+```
+
+응답 규칙:
+
+- `content`는 비어 있을 수 없으며 공개 API의 최대 메시지 길이인 20,000자를 넘지 않는다.
+- `evidenceRefs[].evidenceId`는 요청에 포함된 근거 ID만 참조한다.
+- 관계를 진단하거나 상대방의 의도를 단정하지 않는다.
+- 자해·폭력·학대 등 위험 신호가 있으면 `CRISIS_SUPPORT` 안전 제안을 반환한다.
+- 위험 신호가 없으면 `safetyNotice`는 `null`일 수 있다.
+- 백엔드는 최종 응답을 MongoDB에 저장하고 클라이언트에는 `assistant.delta`와 `assistant.completed` SSE 이벤트로 전달한다.
