@@ -50,7 +50,9 @@ public class AnalysisJobRunner {
             ));
             update(job, AnalysisStage.CALCULATING_PRQC, 90);
             update(job, AnalysisStage.CALCULATING_RELATIONSHIP_SCORE, 95);
-            RelationshipReport report = reportService.create(job.getId(), relationship, result);
+            RelationshipReport report = reportService.create(
+                    job.getId(), job.getCheckInId(), relationship, result
+            );
             job.complete(report.getId());
             jobRepository.save(job);
         } catch (Exception exception) {

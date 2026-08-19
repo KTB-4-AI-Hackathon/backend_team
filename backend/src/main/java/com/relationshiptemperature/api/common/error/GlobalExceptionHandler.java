@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -26,6 +27,17 @@ public class GlobalExceptionHandler {
         List<ErrorResponse.FieldError> fields = exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> new ErrorResponse.FieldError(error.getField(), error.getCode()))
                 .toList();
+        return ResponseEntity.badRequest().body(ErrorResponse.validation(requestId(request), fields));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        List<ErrorResponse.FieldError> fields = List.of(new ErrorResponse.FieldError(
+                exception.getName(), "TYPE_MISMATCH"
+        ));
         return ResponseEntity.badRequest().body(ErrorResponse.validation(requestId(request), fields));
     }
 

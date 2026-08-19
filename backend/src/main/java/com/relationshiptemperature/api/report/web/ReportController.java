@@ -8,27 +8,22 @@ import com.relationshiptemperature.api.relationship.domain.RelationshipType;
 import com.relationshiptemperature.api.report.application.ReportService;
 import com.relationshiptemperature.api.report.domain.RelationshipReport;
 import com.relationshiptemperature.api.report.domain.ReportEvidence;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import java.time.ZoneId;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Validated
 @RestController
 @RequestMapping("/api/v1/relationships/{relationshipId}/report")
 public class ReportController {
-
-    private static final String DISCLAIMER =
-            "대화에서 관찰된 패턴을 바탕으로 한 참고 정보이며 관계를 진단하거나 단정하지 않습니다.";
 
     private final CurrentUserService currentUserService;
     private final RelationshipService relationshipService;
@@ -47,7 +42,7 @@ public class ReportController {
     @GetMapping
     ApiResponse<ReportResponse> get(
             @PathVariable UUID relationshipId,
-            @RequestParam(defaultValue = "8") @Min(4) @Max(52) int weeks
+            @RequestParam(defaultValue = "8") int weeks
     ) {
         UUID userId = currentUserService.requireUserId();
         Relationship relationship = relationshipService.getOwned(userId, relationshipId);
@@ -72,7 +67,7 @@ public class ReportController {
             EvidenceMetric metric
     ) {}
 
-    record TrendPoint(String weekStart, String label, int score) {}
+    record TrendPoint(LocalDate weekStart, String label, int score) {}
 
     record ReportResponse(
             UUID id,
@@ -81,7 +76,7 @@ public class ReportController {
             RelationshipReport.PrqcScores prqc,
             List<EvidenceResponse> evidences,
             List<TrendPoint> trend,
-            String analyzedAt,
+            Instant analyzedAt,
             String modelVersion,
             String scoringPolicyVersion,
             String disclaimer
@@ -102,30 +97,35 @@ public class ReportController {
                     report.getPrqcScores(),
                     evidences.stream().map(ReportController::fromEvidence).toList(),
                     trend.stream().map(item -> new TrendPoint(
-                            item.getAnalyzedAt().atZone(ZoneId.of("Asia/Seoul")).toLocalDate().toString(),
-                            "주간",
+                            item.getWeekStart(), trendLabel(item.getWeekStart(), report.getWeekStart()),
                             item.getOverallScore()
                     )).toList(),
-                    report.getAnalyzedAt().toString(),
+                    report.getAnalyzedAt(),
                     report.getModelVersion(),
                     report.getScoringPolicyVersion(),
-                    DISCLAIMER
+                    report.getDisclaimer()
             );
         }
 
         private static Overall overall(RelationshipReport report) {
-            int score = report.getOverallScore();
-            if (score >= 80) return new Overall(score, report.getScoreChange(), "HEALTHY", "건강한 관계");
-            if (score >= 60) return new Overall(score, report.getScoreChange(), "GOOD", "양호");
-            if (score >= 40) return new Overall(score, report.getScoreChange(), "NEEDS_ATTENTION", "주의 필요");
-            return new Overall(score, report.getScoreChange(), "CHANGE_DETECTED", "변화 감지");
+            return new Overall(
+                    report.getOverallScore(), report.getScoreChange(),
+                    report.getStatusCode().name(), report.getStatusLabel()
+            );
+        }
+
+        private static String trendLabel(LocalDate weekStart, LocalDate latestWeekStart) {
+            long weeksAgo = ChronoUnit.WEEKS.between(weekStart, latestWeekStart);
+            if (weeksAgo == 0) return "이번 주";
+            if (weeksAgo == 1) return "지난 주";
+            return weeksAgo + "주 전";
         }
     }
 
     private static EvidenceResponse fromEvidence(ReportEvidence evidence) {
         ReportEvidence.Metric metric = evidence.getMetric();
         return new EvidenceResponse(
-                evidence.getId(), evidence.getComponent(), evidence.getScore(), evidence.getSummary(),
+                evidence.getId(), evidence.getComponent().apiCode(), evidence.getScore(), evidence.getSummary(),
                 metric == null ? null : new EvidenceMetric(
                         metric.name(), metric.currentValue(), metric.previousValue(), metric.unit(), metric.period()
                 )

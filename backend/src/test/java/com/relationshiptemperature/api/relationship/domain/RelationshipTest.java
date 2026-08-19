@@ -32,7 +32,9 @@ class RelationshipTest {
     @Test
     void usesSecondKoreanCharacterAsInitial() {
         Relationship relationship = Relationship.draft(UUID.randomUUID(), "홍길동", RelationshipType.COWORKER);
+        Relationship spaced = Relationship.draft(UUID.randomUUID(), "큰 상승", RelationshipType.FRIEND);
 
         assertThat(relationship.getInitial()).isEqualTo("길");
+        assertThat(spaced.getInitial()).isEqualTo("상");
     }
 }

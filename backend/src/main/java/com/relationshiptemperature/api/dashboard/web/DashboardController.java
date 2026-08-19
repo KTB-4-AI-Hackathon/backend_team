@@ -1,13 +1,17 @@
 package com.relationshiptemperature.api.dashboard.web;
 
 import com.relationshiptemperature.api.auth.application.CurrentUserService;
+import com.relationshiptemperature.api.auth.domain.User;
 import com.relationshiptemperature.api.common.api.ApiResponse;
 import com.relationshiptemperature.api.dashboard.application.DashboardService;
+import com.relationshiptemperature.api.dashboard.application.DashboardService.DashboardItem;
 import com.relationshiptemperature.api.dashboard.application.DashboardService.DashboardView;
 import com.relationshiptemperature.api.dashboard.application.DashboardService.Sort;
-import com.relationshiptemperature.api.relationship.domain.Relationship;
+import com.relationshiptemperature.api.relationship.domain.RelationshipStatus;
 import com.relationshiptemperature.api.relationship.domain.RelationshipType;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -33,8 +37,12 @@ public class DashboardController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekOf,
             @RequestParam(defaultValue = "ABS_CHANGE_DESC") Sort sort
     ) {
+        User user = currentUserService.requireUser();
+        LocalDate selectedDate = weekOf == null
+                ? LocalDate.now(ZoneId.of(user.getTimezone()))
+                : weekOf;
         return ApiResponse.of(DashboardResponse.from(
-                dashboardService.get(currentUserService.requireUserId(), weekOf, sort)
+                dashboardService.get(user.getId(), selectedDate, sort)
         ));
     }
 
@@ -45,11 +53,12 @@ public class DashboardController {
             String name,
             String initial,
             RelationshipType relationshipType,
+            RelationshipStatus status,
             Integer score,
             String statusCode,
             String statusLabel,
             Integer change,
-            String lastAnalyzedAt,
+            Instant lastAnalyzedAt,
             List<Integer> sparkline
     ) {}
     record LargestChange(UUID relationshipId, String name, Integer change, List<Integer> sparkline) {}
@@ -63,41 +72,54 @@ public class DashboardController {
     ) {
         static DashboardResponse from(DashboardView view) {
             return new DashboardResponse(
-                    new Week(view.startDate(), view.endDate(), view.startDate().getYear() + "년 주간"),
+                    new Week(view.startDate(), view.endDate(), weekLabel(view.startDate())),
                     new Summary(view.relationships().size(), view.averageScore(), view.averageChange()),
                     view.relationships().stream().map(DashboardResponse::card).toList(),
                     view.largestChanges().stream().map(item -> new LargestChange(
-                            item.getId(), item.getName(), item.getLatestChange(), List.of(item.getLatestScore())
+                            item.relationship().getId(), item.relationship().getName(),
+                            item.report().getScoreChange(), item.sparkline()
                     )).toList(),
                     view.needsAttention().stream().map(DashboardResponse::attention).toList()
             );
         }
 
-        private static RelationshipCard card(Relationship relationship) {
-            ScoreLabel label = label(relationship.getLatestScore());
+        private static RelationshipCard card(DashboardItem item) {
             return new RelationshipCard(
-                    relationship.getId(), relationship.getName(), relationship.getInitial(), relationship.getRelationshipType(),
-                    relationship.getLatestScore(), label.code(), label.label(), relationship.getLatestChange(),
-                    relationship.getLastAnalyzedAt() == null ? null : relationship.getLastAnalyzedAt().toString(),
-                    List.of(relationship.getLatestScore())
+                    item.relationship().getId(), item.relationship().getName(), item.relationship().getInitial(),
+                    item.relationship().getRelationshipType(), item.relationship().getStatus(),
+                    item.report().getOverallScore(), item.report().getStatusCode().name(),
+                    item.report().getStatusLabel(), item.report().getScoreChange(),
+                    item.report().getAnalyzedAt(), item.sparkline()
             );
         }
 
-        private static Attention attention(Relationship relationship) {
-            boolean both = relationship.getLatestScore() < 60
-                    && relationship.getLatestChange() != null && relationship.getLatestChange() <= -10;
-            String code = both ? "SCORE_AND_DROP"
-                    : relationship.getLatestScore() < 60 ? "LOW_SCORE" : "LARGE_DROP";
-            return new Attention(relationship.getId(), relationship.getName(), relationship.getLatestScore(), code, "변화가 관찰됨");
+        private static Attention attention(DashboardItem item) {
+            int score = item.report().getOverallScore();
+            Integer change = item.report().getScoreChange();
+            boolean both = score < 60 && change != null && change <= -10;
+            if (both) {
+                return new Attention(
+                        item.relationship().getId(), item.relationship().getName(), score,
+                        "SCORE_AND_DROP", "낮은 점수와 큰 하락이 함께 관찰됨"
+                );
+            }
+            if (score < 60) {
+                return new Attention(
+                        item.relationship().getId(), item.relationship().getName(), score,
+                        "LOW_SCORE", "점수가 주의 기준보다 낮음"
+                );
+            }
+            return new Attention(
+                    item.relationship().getId(), item.relationship().getName(), score,
+                    "LARGE_DROP", "전주 대비 큰 하락이 관찰됨"
+            );
         }
 
-        private static ScoreLabel label(int score) {
-            if (score >= 80) return new ScoreLabel("HEALTHY", "건강한 관계");
-            if (score >= 60) return new ScoreLabel("GOOD", "양호");
-            if (score >= 40) return new ScoreLabel("NEEDS_ATTENTION", "주의 필요");
-            return new ScoreLabel("CHANGE_DETECTED", "변화 감지");
+        private static String weekLabel(LocalDate startDate) {
+            int weekOfMonth = ((startDate.getDayOfMonth() - 1) / 7) + 1;
+            return "%d년 %d월 %d주차".formatted(
+                    startDate.getYear(), startDate.getMonthValue(), weekOfMonth
+            );
         }
     }
-
-    record ScoreLabel(String code, String label) {}
 }
