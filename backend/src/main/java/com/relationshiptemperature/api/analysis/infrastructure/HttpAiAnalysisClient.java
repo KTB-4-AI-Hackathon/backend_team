@@ -5,6 +5,8 @@ import com.relationshiptemperature.api.config.AppProperties;
 import com.relationshiptemperature.api.conversation.repository.ConversationMessageRepository;
 import com.relationshiptemperature.api.report.domain.RelationshipReport.PrqcScores;
 import com.relationshiptemperature.api.report.domain.ReportEvidence.Metric;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -14,6 +16,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -28,12 +31,14 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
     private final RestClient restClient;
     private final ConversationMessageRepository messageRepository;
     private final NormalizedConversationNdjsonWriter writer;
+    private final ObjectMapper objectMapper;
 
     public HttpAiAnalysisClient(
             RestClient.Builder builder,
             AppProperties properties,
             ConversationMessageRepository messageRepository,
-            NormalizedConversationNdjsonWriter writer
+            NormalizedConversationNdjsonWriter writer,
+            ObjectMapper objectMapper
     ) {
         this.restClient = builder
                 .baseUrl(properties.ai().baseUrl())
@@ -41,6 +46,7 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
                 .build();
         this.messageRepository = messageRepository;
         this.writer = writer;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -58,6 +64,7 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
         body.add("format", "NORMALIZED_NDJSON_GZIP");
         body.add("formatVersion", "conversation-ndjson-1.0.0");
         body.add("sha256", sha256(conversation));
+        body.add("context", jsonPart(request.context()));
         body.add("file", new ByteArrayResource(conversation) {
             @Override
             public String getFilename() {
@@ -80,6 +87,16 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
                 response.components().toDomain(),
                 response.evidences().stream().map(EvidenceDto::toDomain).toList()
         );
+    }
+
+    private HttpEntity<String> jsonPart(AiAnalysisClient.AnalysisContext context) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return new HttpEntity<>(objectMapper.writeValueAsString(context), headers);
+        } catch (JacksonException exception) {
+            throw new IllegalStateException("Could not serialize AI analysis context", exception);
+        }
     }
 
     private String sha256(byte[] content) {

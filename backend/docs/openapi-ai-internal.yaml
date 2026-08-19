@@ -7,7 +7,7 @@ info:
     Backend Worker가 AI 서버에 정규화된 1:1 대화를 전달하고 PRQC 6개 구성요소와
     구조화 근거를 한 번에 받는 내부 API다. 프론트엔드는 호출하지 않는다.
 
-    AI 서버는 공개 AnalysisJob, 단계별 진행률, 웹훅, 체크인 활용, canonical
+    AI 서버는 공개 AnalysisJob, 단계별 진행률, 웹훅, canonical
     overall.score 계산을 담당하지 않는다. Backend Worker가 AI 결과에 버전된
     관계 유형별 가중치를 적용해 최종 종합점수를 계산한다.
 servers:
@@ -43,6 +43,24 @@ paths:
                 value:
                   analysisId: 0198c8a7-3000-7000-8000-000000000001
                   relationshipType: FRIEND
+                  context:
+                    user:
+                      userId: 0198c8a7-3000-7000-8000-000000000002
+                      displayName: 우
+                      timezone: Asia/Seoul
+                    relationship:
+                      relationshipId: 0198c8a7-3000-7000-8000-000000000003
+                      name: 민지
+                      relationshipType: FRIEND
+                      status: ANALYZING
+                    checkIn:
+                      checkInId: 0198c8a7-3000-7000-8000-000000000004
+                      weekStart: "2026-08-17"
+                      answers:
+                        - questionCode: RELATIONSHIP_FEELING
+                          score: 6
+                        - questionCode: CONVERSATION_COMFORT
+                          score: 4
                   conversation:
                     url: https://storage.example.com/private/conversation?signature=redacted
                     format: NORMALIZED_NDJSON_GZIP
@@ -56,6 +74,8 @@ paths:
             encoding:
               file:
                 contentType: application/gzip
+              context:
+                contentType: application/json
       responses:
         "200":
           description: PRQC 분석 완료
@@ -294,7 +314,7 @@ components:
     ObjectReferenceAnalysisRequest:
       type: object
       additionalProperties: false
-      required: [analysisId, relationshipType, conversation]
+      required: [analysisId, relationshipType, context, conversation]
       properties:
         analysisId:
           type: string
@@ -302,6 +322,8 @@ components:
           description: Idempotency-Key와 동일해야 함
         relationshipType:
           $ref: "#/components/schemas/RelationshipType"
+        context:
+          $ref: "#/components/schemas/AnalysisContext"
         conversation:
           $ref: "#/components/schemas/ObjectConversationReference"
     MultipartAnalysisRequest:
@@ -310,6 +332,7 @@ components:
       required:
         - analysisId
         - relationshipType
+        - context
         - format
         - formatVersion
         - sha256
@@ -321,6 +344,8 @@ components:
           description: Idempotency-Key와 동일해야 함
         relationshipType:
           $ref: "#/components/schemas/RelationshipType"
+        context:
+          $ref: "#/components/schemas/AnalysisContext"
         format:
           $ref: "#/components/schemas/ConversationFormat"
         formatVersion:
@@ -331,6 +356,78 @@ components:
           type: string
           format: binary
           description: gzip으로 압축한 정규화 NDJSON
+    AnalysisContext:
+      type: object
+      additionalProperties: false
+      required: [user, relationship, checkIn]
+      properties:
+        user:
+          $ref: "#/components/schemas/AnalysisUserContext"
+        relationship:
+          $ref: "#/components/schemas/AnalysisRelationshipContext"
+        checkIn:
+          $ref: "#/components/schemas/AnalysisCheckInContext"
+    AnalysisUserContext:
+      type: object
+      additionalProperties: false
+      required: [userId, displayName, timezone]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 50
+    AnalysisRelationshipContext:
+      type: object
+      additionalProperties: false
+      required: [relationshipId, name, relationshipType, status]
+      properties:
+        relationshipId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        relationshipType:
+          $ref: "#/components/schemas/RelationshipType"
+        status:
+          type: string
+          description: 분석 요청 시점의 관계 상태
+    AnalysisCheckInContext:
+      type: object
+      additionalProperties: false
+      required: [checkInId, weekStart, answers]
+      properties:
+        checkInId:
+          type: string
+          format: uuid
+        weekStart:
+          type: string
+          format: date
+        answers:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CheckInAnswerContext"
+    CheckInAnswerContext:
+      type: object
+      additionalProperties: false
+      required: [questionCode, score]
+      properties:
+        questionCode:
+          type: string
+          enum: [RELATIONSHIP_FEELING, CONVERSATION_COMFORT]
+        score:
+          type: integer
+          minimum: 1
+          maximum: 7
     PrqcComponents:
       type: object
       additionalProperties: false
