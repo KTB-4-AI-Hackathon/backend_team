@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createRelationship } from '../api/relationships';
+import { createRelationship, deleteRelationship } from '../api/relationships';
 import { uploadConversationFile, getConversationFile } from '../api/conversationFiles';
 import { submitCheckIn } from '../api/checkins';
 import { startAnalysis, pollAnalysisJob } from '../api/analyses';
@@ -67,15 +67,38 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
       return;
     }
     setFileState({ name: file.name, sizeBytes: file.size, status: 'uploading' });
+    let uploadRelationshipId = relationshipId;
+    let createdForUpload = false;
     try {
-      const uploaded = await uploadConversationFile(relationshipId, file, selfParticipantName);
+      // In create mode, do not persist a relationship until the user has
+      // actually selected a conversation file. Roll it back if the upload or
+      // validation fails so an empty draft cannot remain in the dashboard.
+      if (!isAddData && !uploadRelationshipId) {
+        const created = await createRelationship({ name: name.trim(), relationshipType: relType });
+        uploadRelationshipId = created.id;
+        createdForUpload = true;
+        setRelationshipId(created.id);
+      }
+
+      const uploaded = await uploadConversationFile(uploadRelationshipId, file, selfParticipantName);
       setConversationFileId(uploaded.id);
+      let valid = uploaded.validationStatus === 'VALID';
       if (uploaded.validationStatus === 'VALIDATING') {
-        await waitForValidation(uploaded.id);
+        valid = await waitForValidation(uploaded.id);
       } else {
         setFileState({ name: uploaded.originalFileName, sizeBytes: uploaded.sizeBytes, status: uploaded.validationStatus === 'VALID' ? 'valid' : 'invalid' });
       }
+      if (!valid && createdForUpload) {
+        await deleteRelationship(uploadRelationshipId);
+        setRelationshipId(null);
+        setConversationFileId(null);
+      }
     } catch (err) {
+      if (createdForUpload && uploadRelationshipId) {
+        await deleteRelationship(uploadRelationshipId).catch(() => undefined);
+        setRelationshipId(null);
+        setConversationFileId(null);
+      }
       setFileState({ name: file.name, sizeBytes: file.size, status: 'invalid', message: err.message });
     }
   }
@@ -85,10 +108,17 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
       await new Promise((r) => setTimeout(r, 1200));
       const f = await getConversationFile(fileId);
       if (f.validationStatus !== 'VALIDATING') {
-        setFileState({ name: f.originalFileName, sizeBytes: f.sizeBytes, status: f.validationStatus === 'VALID' ? 'valid' : 'invalid' });
-        return;
+        const valid = f.validationStatus === 'VALID';
+        setFileState({ name: f.originalFileName, sizeBytes: f.sizeBytes, status: valid ? 'valid' : 'invalid' });
+        return valid;
       }
     }
+    setFileState((current) => ({
+      ...(current || { name: '', sizeBytes: 0 }),
+      status: 'invalid',
+      message: '파일 검증 시간이 초과됐어요. 다시 업로드해 주세요.',
+    }));
+    return false;
   }
 
   async function handleStep1Next() {
@@ -100,8 +130,6 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
     setSubmitting(true);
     setFormError(null);
     try {
-      const created = await createRelationship({ name: trimmed, relationshipType: relType });
-      setRelationshipId(created.id);
       setStep(2);
     } catch (err) {
       setFormError(err.message);
