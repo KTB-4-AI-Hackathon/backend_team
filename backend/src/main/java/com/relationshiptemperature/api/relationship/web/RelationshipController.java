@@ -4,6 +4,7 @@ import com.relationshiptemperature.api.auth.application.CurrentUserService;
 import com.relationshiptemperature.api.common.api.ApiResponse;
 import com.relationshiptemperature.api.common.api.PagedResponse;
 import com.relationshiptemperature.api.relationship.application.RelationshipService;
+import com.relationshiptemperature.api.relationship.application.RelationshipService.Sort;
 import com.relationshiptemperature.api.relationship.domain.Relationship;
 import com.relationshiptemperature.api.relationship.domain.RelationshipStatus;
 import com.relationshiptemperature.api.relationship.domain.RelationshipType;
@@ -38,8 +39,14 @@ public class RelationshipController {
     }
 
     @GetMapping
-    PagedResponse<RelationshipResponse> list(@RequestParam(required = false) String search) {
-        return PagedResponse.singlePage(relationshipService.list(currentUserService.requireUserId(), search).stream()
+    PagedResponse<RelationshipResponse> list(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) RelationshipStatus status,
+            @RequestParam(defaultValue = "ABS_CHANGE_DESC") Sort sort
+    ) {
+        return PagedResponse.singlePage(relationshipService.list(
+                        currentUserService.requireUserId(), search, status, sort
+                ).stream()
                 .map(RelationshipResponse::from)
                 .toList());
     }
