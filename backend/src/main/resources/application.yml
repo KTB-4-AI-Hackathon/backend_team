@@ -5,6 +5,9 @@ spring:
     url: ${DB_URL:jdbc:h2:mem:relationship_temperature;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://relationship_temperature:relationship_temperature@localhost:27017/relationship_temperature?authSource=admin}
   jpa:
     open-in-view: false
     hibernate:
@@ -83,7 +86,7 @@ app:
     timeout: ${AI_TIMEOUT:90s}
   upload:
     max-bytes: 52428800
-    allowed-extensions: [txt]
+    allowed-extensions: [txt, csv]
   retention:
     raw-conversation: ${RAW_CONVERSATION_RETENTION:24h}
     cleanup-cron: ${RETENTION_CLEANUP_CRON:0 15 * * * *}

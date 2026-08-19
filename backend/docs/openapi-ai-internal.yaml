@@ -25,7 +25,7 @@ paths:
       summary: 정규화 대화를 동기 분석
       description: |
         권장 입력은 짧은 만료시간의 다운로드 전용 Presigned URL이다. Object Storage가
-        없는 환경에서는 multipart로 gzip NDJSON을 전송할 수 있다. AI 서버는 단계별
+        없는 환경에서는 multipart로 gzip CSV을 전송할 수 있다. AI 서버는 단계별
         진행률이나 콜백 없이 최종 결과를 동기 반환한다. 권장 호출 타임아웃은
         60~120초이며 예상 처리 시간은 20~30초다.
       parameters:
@@ -44,8 +44,8 @@ paths:
                   relationshipType: FRIEND
                   conversation:
                     url: https://storage.example.com/private/conversation?signature=redacted
-                    format: NORMALIZED_NDJSON_GZIP
-                    formatVersion: conversation-ndjson-1.0.0
+                    format: NORMALIZED_CSV_GZIP
+                    formatVersion: conversation-csv-1.0.0
                     contentEncoding: gzip
                     sizeBytes: 4821941
                     sha256: a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d
@@ -221,11 +221,11 @@ components:
       description: 소문자 16진수 SHA-256
     ConversationFormat:
       type: string
-      const: NORMALIZED_NDJSON_GZIP
+      const: NORMALIZED_CSV_GZIP
     FormatVersion:
       type: string
-      pattern: ^conversation-ndjson-[0-9]+\.[0-9]+\.[0-9]+$
-      example: conversation-ndjson-1.0.0
+      pattern: ^conversation-csv-[0-9]+\.[0-9]+\.[0-9]+$
+      example: conversation-csv-1.0.0
     ObjectConversationReference:
       type: object
       additionalProperties: false
@@ -295,7 +295,7 @@ components:
         file:
           type: string
           format: binary
-          description: gzip으로 압축한 정규화 NDJSON
+          description: gzip으로 압축한 정규화 CSV
     PrqcComponents:
       type: object
       additionalProperties: false

@@ -25,19 +25,22 @@ public class ConversationFileService {
     private final KakaoConversationParser parser;
     private final ConversationFileRepository fileRepository;
     private final RelationshipService relationshipService;
+    private final ConversationTranscriptStore transcriptStore;
 
     public ConversationFileService(
             AppProperties properties,
             ConversationStorage storage,
             KakaoConversationParser parser,
             ConversationFileRepository fileRepository,
-            RelationshipService relationshipService
+            RelationshipService relationshipService,
+            ConversationTranscriptStore transcriptStore
     ) {
         this.properties = properties;
         this.storage = storage;
         this.parser = parser;
         this.fileRepository = fileRepository;
         this.relationshipService = relationshipService;
+        this.transcriptStore = transcriptStore;
     }
 
     @Transactional
@@ -69,7 +72,9 @@ public class ConversationFileService {
                     Instant.now().plus(properties.retention().rawConversation())
             );
             file.validated(parsed.messageCount(), parsed.startedAt(), parsed.endedAt());
-            return fileRepository.save(file);
+            ConversationFile saved = fileRepository.save(file);
+            transcriptStore.save(saved, parsed);
+            return saved;
         } catch (ApiException exception) {
             throw exception;
         } catch (IOException exception) {
@@ -92,6 +97,7 @@ public class ConversationFileService {
         } catch (IOException exception) {
             throw new ApiException(ErrorCode.INTERNAL_ERROR);
         }
+        transcriptStore.delete(file.getId());
         fileRepository.delete(file);
     }
 

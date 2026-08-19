@@ -16,7 +16,7 @@ MVP 범위는 다음과 같다.
 
 1. 카카오 계정 로그인과 세션 관리
 2. 인물(관계) 등록 및 관리
-3. 카카오톡 대화 내보내기 `.txt` 파일 업로드
+3. 카카오톡 대화 내보내기 `.txt`/`.csv` 파일 업로드
 4. 주관적 체크인 응답 저장
 5. 대화 패턴 분석, PRQC 점수화, 근거 생성
 6. 메인 대시보드 및 인물별 관계 리포트
@@ -32,7 +32,7 @@ MVP 범위는 다음과 같다.
 - 일시는 ISO 8601 UTC 문자열로 전달한다. 예: `2026-08-19T06:20:00Z`.
 - 사용자 주차/날짜 표시는 사용자 타임존을 기준으로 계산하며 기본값은 `Asia/Seoul`이다.
 - 점수는 `0~100` 정수이고, 체크인 응답은 `1~7` 정수다.
-- 카카오톡 내보내기 파일은 `.txt`, 최대 50MB로 제한한다.
+- 카카오톡 내보내기 파일은 `.txt` 또는 `.csv`, 최대 50MB로 제한한다.
 - 프론트엔드와 백엔드 사이의 분석은 화면상 20~30초가 걸릴 수 있으므로 `202 Accepted` 비동기 Job 방식으로 처리한다.
 - 백엔드 Worker와 AI 서버 사이는 MVP에서 단일 동기 호출로 처리한다. AI 서버는 단계별 진행률이나 웹훅을 제공하지 않는다.
 - 분석 Job의 `stage`와 `progress`는 백엔드 오케스트레이션 기준의 UI 표시용 예상값이며 AI 서버 내부의 실제 진행률을 의미하지 않는다.
@@ -464,7 +464,7 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| `file` | binary | Y | `.txt`, 최대 50MB |
+| `file` | binary | Y | `.txt` 또는 `.csv`, 최대 50MB |
 | `source` | string | Y | MVP는 `KAKAO_TALK` |
 
 응답: `201 Created`
@@ -474,7 +474,7 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
   "data": {
     "id": "0198c8a7-1000-7000-8000-000000000001",
     "relationshipId": "0198c8a7-7f49-7a35-b7a7-8e81b4db0281",
-    "originalFileName": "KakaoTalk_Chat.txt",
+    "originalFileName": "KakaoTalk_Chat.csv",
     "sizeBytes": 825341,
     "source": "KAKAO_TALK",
     "validationStatus": "VALID",
@@ -499,7 +499,8 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
 
 - 프론트엔드 공개 응답에는 원본 또는 정규화 파일의 경로·URL을 노출하지 않는다.
 - 50MB급 원문을 AI 요청 JSON 문자열에 포함하지 않는다.
-- 백엔드가 카카오톡 원문을 검증·파싱한 뒤 정규화된 NDJSON을 gzip으로 압축해 Object Storage에 저장한다.
+- 백엔드가 카카오톡 원문을 검증·파싱한 뒤 `Date,User,Message` CSV로 정규화하고 MongoDB에 저장한다.
+- AI 전달 시에는 정규화된 CSV를 gzip으로 압축해 Object Storage 또는 multipart 스트리밍으로 전달한다.
 - AI 서버에는 다운로드 전용, 5~15분 만료 Presigned URL과 `sha256`, `sizeBytes`, `format`을 전달한다.
 - Object Storage를 사용할 수 없는 MVP 환경에서는 `multipart/form-data` 스트리밍을 대안으로 사용한다.
 - 서로 다른 컨테이너·호스트에서 유효하지 않을 수 있는 백엔드 로컬 파일 경로는 전달하지 않는다.
@@ -913,7 +914,7 @@ data: {"message":{"id":"0198...002","role":"ASSISTANT","content":"그럴 수 있
 | 카드 정렬 | `GET /dashboard?sort=...` | `sort` |
 | 인물 목록/검색 | `GET /relationships?search=...` | 이름, 유형, 점수, 변화 |
 | 인물 등록 1단계 | `POST /relationships` | 이름, 관계 유형 |
-| 인물 등록 2단계 | `POST /relationships/{relationshipId}/conversation-files` | `.txt` 파일 |
+| 인물 등록 2단계 | `POST /relationships/{relationshipId}/conversation-files` | `.txt` 또는 `.csv` 파일 |
 | 인물 등록 3단계 | `POST /relationships/{relationshipId}/check-ins` | 1~7점 2문항 |
 | 분석 시작/로딩 | `POST /relationships/{relationshipId}/analyses`, `GET /analysis-jobs/{jobId}` | 진행률, 단계, 상태 |
 | 인물별 상세 리포트 | `GET /relationships/{relationshipId}/report` | 종합점수, 변화, PRQC, 근거, 8주 추이 |
@@ -968,6 +969,7 @@ DRAFT
 - 업로드 파일은 실행 불가능한 격리 저장소에 보관한다.
 - 파일명은 표시용으로만 사용하고 실제 저장 경로에 직접 사용하지 않는다.
 - 악성 파일 탐지, 크기 제한, 파서 시간/메모리 제한을 적용한다.
+- `.txt` 업로드도 서버에서 `Date,User,Message` CSV로 정규화해 MongoDB에 저장하고 AI 전달 포맷은 CSV로 통일한다.
 - 로그, 오류 추적, 분석 메트릭에 원문 대화 내용을 기록하지 않는다.
 - AI 서버에 전달하는 Presigned URL은 다운로드 전용, 5~15분 만료로 발급하고 사용자 이름이나 원본 파일명을 URL에 포함하지 않는다.
 - AI 서버는 전달받은 정규화 파일의 `sha256`과 `sizeBytes`를 검증한다.

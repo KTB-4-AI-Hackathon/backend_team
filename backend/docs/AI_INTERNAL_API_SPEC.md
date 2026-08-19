@@ -44,7 +44,7 @@ Backend API
        ↓
 Backend Worker
   ├─ 카카오 원문 검증·파싱
-  ├─ 정규화 NDJSON gzip 생성
+  ├─ 정규화 CSV gzip 생성
   ├─ 내부 AI API 동기 호출
   ├─ 관계 유형별 가중치로 overall.score 계산
   └─ 리포트 및 Job 저장
@@ -82,16 +82,17 @@ AI 서버에는 사용자 세션 쿠키, CSRF 토큰, 카카오 OAuth 토큰을 
 백엔드는 카카오톡 `.txt` 원문을 직접 전달하지 않고 다음 순서로 처리한다.
 
 1. 원본 크기, MIME, 인코딩, 카카오 내보내기 형식을 검증한다.
-2. 1:1 메시지를 정규화 NDJSON으로 변환한다.
+2. 1:1 메시지를 정규화 CSV로 변환한다.
 3. 정규화 결과를 gzip으로 압축한다.
 4. 암호화된 Object Storage에 저장한다.
 5. AI 서버에 다운로드 전용 Presigned URL을 전달한다.
 
-정규화 NDJSON 예시:
+정규화 CSV 예시:
 
-```json
-{"messageId":"m1","sender":"SELF","sentAt":"2026-08-17T10:20:00+09:00","text":"오늘 저녁에 시간 괜찮아?"}
-{"messageId":"m2","sender":"OTHER","sentAt":"2026-08-17T12:04:00+09:00","text":"조금 늦게 끝날 것 같아"}
+```csv
+Date,User,Message
+2026-08-17 19:20:00,"SELF","오늘 저녁에 시간 괜찮아?"
+2026-08-17 21:04:00,"OTHER","조금 늦게 끝날 것 같아"
 ```
 
 Presigned URL 규칙:
@@ -105,7 +106,7 @@ Presigned URL 규칙:
 
 ### 4.2 대안 방식: multipart 스트리밍
 
-Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipart/form-data`로 `conversation.ndjson.gz`를 전송할 수 있다.
+Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipart/form-data`로 `conversation.csv.gz`를 전송할 수 있다.
 
 50MB급 원문 또는 정규화 대화를 JSON 문자열이나 Base64로 포함하지 않는다. 백엔드 로컬 파일 경로도 다른 컨테이너·호스트에서 유효하지 않으므로 전달하지 않는다.
 
@@ -121,8 +122,8 @@ Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipar
   "relationshipType": "FRIEND",
   "conversation": {
     "url": "https://storage.example.com/private/conversation?...",
-    "format": "NORMALIZED_NDJSON_GZIP",
-    "formatVersion": "conversation-ndjson-1.0.0",
+    "format": "NORMALIZED_CSV_GZIP",
+    "formatVersion": "conversation-csv-1.0.0",
     "contentEncoding": "gzip",
     "sizeBytes": 4821941,
     "sha256": "a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d"
@@ -144,10 +145,10 @@ Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipar
 ```text
 analysisId: 0198c8a7-3000-7000-8000-000000000001
 relationshipType: FRIEND
-format: NORMALIZED_NDJSON_GZIP
-formatVersion: conversation-ndjson-1.0.0
+format: NORMALIZED_CSV_GZIP
+formatVersion: conversation-csv-1.0.0
 sha256: a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d
-file: conversation.ndjson.gz
+file: conversation.csv.gz
 ```
 
 ### 5.3 성공 응답
@@ -297,4 +298,3 @@ AI 내부 API는 다음 조건을 만족하면 MVP 완료로 본다.
 6. 429/503/504의 `retryable=true` 오류 계약 준수
 7. 원문·URL·토큰 비로깅 검증
 8. 50MB 업로드에서 생성될 수 있는 정규화 데이터 처리 성능 검증
-

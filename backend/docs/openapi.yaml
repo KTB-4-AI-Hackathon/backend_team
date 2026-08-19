@@ -304,7 +304,7 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: .txt, 최대 50MB
+                  description: .txt 또는 .csv, 최대 50MB
                 source:
                   type: string
                   const: KAKAO_TALK
