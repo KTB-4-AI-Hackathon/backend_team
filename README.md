@@ -4,32 +4,47 @@
 
 ```
 backend_team/
-├── compose.yaml     PostgreSQL · MongoDB 컨테이너
+├── compose.yaml     전체 실행 스택 (PostgreSQL · MongoDB · 백엔드 · 프론트)
 ├── .env.example     환경변수 템플릿
-└── backend/         Spring Boot API (Java 21)
+├── backend/         Spring Boot API (Java 21) + Dockerfile
+└── front/           React 19 + Vite (Java/Node 설치 없이 컨테이너로 실행 가능) + Dockerfile
 ```
-
-> 프론트엔드는 아직 이 저장소에 없습니다. 추가되면 이 문서에 실행 방법을 덧붙입니다.
 
 ## 빠른 시작
 
-**필요한 것: Docker Desktop, Java 21**
+**필요한 것: Docker Desktop 하나면 됩니다.** (Java·Node는 컨테이너 안에 들어 있습니다)
 
 ```bash
 git clone https://github.com/KTB-4-AI-Hackathon/backend_team.git
 cd backend_team
 
-docker compose up -d          # PostgreSQL + MongoDB
-cd backend && ./gradlew bootRun
+cp .env.example .env          # 카카오 키 등 비밀값을 여기에 채운다
+docker compose up -d --build  # DB + 백엔드 + 프론트 전부 기동
+docker compose ps             # 상태 확인
 ```
 
 | 주소 | 내용 |
 |---|---|
-| http://localhost:8080/actuator/health | 헬스체크 |
-| http://localhost:8080/api/v1/auth/kakao/authorize | 카카오 로그인 진입 |
+| http://localhost:5173 | 프론트엔드 (여기로 접속) |
+| http://localhost:8080/actuator/health | 백엔드 헬스체크 |
+| http://localhost:5173/api/v1/auth/kakao/authorize | 카카오 로그인 진입 |
+
+**로그인은 반드시 5173으로 들어가세요.** 프론트가 `/api`·`/oauth2`를 백엔드로 프록시하기 때문에
+세션 쿠키와 카카오 redirect_uri가 한 오리진(`localhost:5173`)으로 유지됩니다.
+
+`front/`는 소스가 bind mount 되어 있어 코드를 고치면 그대로 HMR이 됩니다.
+백엔드 코드를 고치면 `docker compose up -d --build backend`로 다시 빌드하세요.
+
+### 컨테이너 없이 호스트에서 돌리기
 
 기본 프로필은 **H2 메모리 DB**와 AI stub을 쓰기 때문에 Docker 없이도 백엔드는 뜹니다.
-PostgreSQL로 붙이려면 아래 "PostgreSQL로 실행"을 보세요.
+이 방식은 Java 21과 Node가 호스트에 있어야 합니다.
+
+```bash
+docker compose up -d postgres mongo   # 인프라만
+cd backend && ./gradlew bootRun       # 다른 터미널
+cd front && npm install && npm run dev
+```
 
 ## Java 21 설치
 
@@ -65,10 +80,18 @@ docker compose down -v        # 데이터까지 삭제
 
 | 서비스 | 포트 | 용도 |
 |---|---|---|
-| postgres | 5432 | 운영 프로필 DB |
-| mongo | 27017 | |
+| front | 5173 | Vite 개발 서버 (`/api`·`/oauth2`는 backend로 프록시) |
+| backend | 8080 | Spring Boot API |
+| postgres | 5432 | 애플리케이션 DB (Flyway가 스키마 생성) |
+| mongo | 27017 | 분석 원문 저장 |
 
-계정은 셋 다 `relationship_temperature` 로 동일합니다.
+DB 계정은 둘 다 `relationship_temperature` 로 동일합니다.
+
+컨테이너로 띄운 백엔드는 H2가 아니라 **PostgreSQL**에 붙습니다
+(`DB_URL`을 compose가 `jdbc:postgresql://postgres:5432/...`로 덮어씀).
+
+프론트를 정적 빌드 + nginx로 서빙하려면 `compose.yaml`의 `front.build.target`을
+`prod`로, 포트를 `"5173:80"`으로 바꾸면 됩니다.
 
 ```bash
 docker compose exec postgres psql -U relationship_temperature -d relationship_temperature
@@ -101,11 +124,17 @@ cd backend && SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
 
 ## 환경변수
 
-`.env.example`을 복사해 `.env`를 만듭니다. `.env`는 커밋되지 않습니다.
+**카카오 API 키는 저장소 루트의 `.env`에 넣습니다.** `.env`는 커밋되지 않습니다.
+`docker compose`가 이 파일을 읽어 backend 컨테이너에 환경변수로 주입합니다.
 
 ```bash
 cp .env.example .env
+# .env 를 열어 KAKAO_CLIENT_ID / KAKAO_CLIENT_SECRET 수정
+docker compose up -d backend   # 값을 바꿨으면 재기동해야 반영됩니다
 ```
+
+`DB_URL`·`MONGODB_URI`·`APP_STORAGE_ROOT`는 컨테이너 실행 시 compose가 서비스 이름 기준으로
+덮어쓰므로 `.env`의 `localhost` 값은 **호스트에서 직접 실행할 때만** 쓰입니다.
 
 | 변수 | 용도 |
 |---|---|
@@ -124,18 +153,27 @@ cp .env.example .env
 | 위치 | 할 일 |
 |---|---|
 | 앱 설정 > 앱 키 | **REST API 키** 복사 |
-| 앱 설정 > 플랫폼 > Web | 사이트 도메인 `http://localhost:8080` 등록 |
+| 앱 설정 > 플랫폼 > Web | 사이트 도메인 `http://localhost:5173`, `http://localhost:8080`, `https://ktb-ai-hackathon-team14.com` 등록 |
 | 제품 설정 > 카카오 로그인 | 활성화 **ON** |
-| 제품 설정 > 카카오 로그인 > Redirect URI | `http://localhost:8080/api/v1/auth/kakao/callback` |
+| 제품 설정 > 카카오 로그인 > Redirect URI | `http://localhost:5173/api/v1/auth/kakao/callback` (컨테이너 실행 시)<br>`http://localhost:8080/api/v1/auth/kakao/callback` (백엔드에 직접 붙을 때)<br>`https://ktb-ai-hackathon-team14.com/api/v1/auth/kakao/callback` (배포) |
 | 제품 설정 > 카카오 로그인 > 동의항목 | 닉네임, 프로필 사진 |
+
+**콜백 경로는 `/api/v1/auth/kakao/callback` 입니다.** `/auth/kakao/callback` 처럼 `/api/v1`이 빠지면
+KOE006이 납니다. 이 경로는 두 곳에 고정되어 있습니다.
+
+- `application.yml` → `spring.security.oauth2.client.registration.kakao.redirect-uri`
+- `SecurityConfig.java` → `.redirectionEndpoint(e -> e.baseUri("/api/v1/auth/kakao/callback"))`
+
+호스트 부분(`{baseUrl}`)은 요청의 Host 헤더에서 만들어집니다. 즉 **5173으로 접속하면 5173짜리
+redirect_uri가, 8080으로 접속하면 8080짜리가** 생성되므로 콘솔에는 두 개 다 등록해두는 편이 편합니다.
 
 동의항목을 켜지 않으면 로그인은 되지만 닉네임이 내려오지 않습니다.
 
 로그인 흐름을 확인하려면:
 
 ```bash
-curl -i http://localhost:8080/api/v1/auth/kakao/authorize
-# 302 → /oauth2/authorization/kakao → kauth.kakao.com
+curl -s -o /dev/null -w '%{redirect_url}\n' http://localhost:5173/oauth2/authorization/kakao
+# → https://kauth.kakao.com/oauth/authorize?...&redirect_uri=http://localhost:5173/api/v1/auth/kakao/callback
 ```
 
 ## 문제가 생기면
@@ -145,12 +183,37 @@ curl -i http://localhost:8080/api/v1/auth/kakao/authorize
 | `Cannot find a Java installation ... 21` | 위 "Java 21 설치" 절차를 따르세요 |
 | `Port 8080 was already in use` | `pkill -f RelationshipTemperatureApplication` |
 | `Cannot connect to the Docker daemon` | Docker Desktop이 실행 중인지 확인 |
+| `port is already allocated` | 다른 컨테이너/프로세스가 5173·8080·5432·27017을 쓰는 중입니다. `docker ps`, `lsof -nP -iTCP:5173 -sTCP:LISTEN`으로 확인 후 정리하세요 |
+| 프론트가 API를 못 부름 | 8080이 아니라 **5173**으로 접속했는지 확인 |
 | `KOE101` | REST API 키가 아닌 다른 키를 넣었거나 오타입니다 |
 | `KOE004` | 콘솔에서 카카오 로그인이 비활성 상태입니다 |
-| `KOE006` | Redirect URI가 콘솔 등록값과 정확히 일치하지 않습니다 |
+| `KOE006` | Redirect URI가 콘솔 등록값과 정확히 일치하지 않습니다. 경로에 `/api/v1`이 들어가는지, 포트(5173/8080)가 맞는지 확인 |
 | 닉네임이 비어 있음 | 콘솔의 동의항목에서 닉네임을 켜세요 |
 | DB를 초기화하고 싶음 | `docker compose down -v` 후 다시 실행 |
 
 ## 더 읽을 것
 
 - [`backend/README.md`](./backend/README.md) — 백엔드 패키지 구조와 설계 원칙
+
+
+---
+
+# 배포
+
+AWS 배포는 별도 문서로 분리했습니다.
+
+**→ [DEPLOYMENT.md](./DEPLOYMENT.md)** — EC2 1대 + ALB(ACM) + Route53 구성
+
+- 아키텍처와 HTTPS 스킴 전달 체인
+- ACM · ALB · 대상 그룹 · 보안 그룹 · Route53 설정값
+- 배포 절차와 검증 체크리스트
+- 배포 주의사항 10가지, 트러블슈팅 표
+
+요약하면 이렇습니다.
+
+```bash
+cp .env.prod.example .env   # FRONTEND_BASE_URL=https://..., SESSION_COOKIE_SECURE=true
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+```
+
+TLS는 **ALB에서 ACM 인증서로 종료**하고 EC2는 평문 80만 받습니다. EC2 안에는 인증서를 두지 않습니다.

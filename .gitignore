@@ -16,3 +16,6 @@ front/dist/
 front/.vite/
 # 위 data/ 규칙은 백엔드 런타임 업로드 디렉토리용이라 front/src/data 소스 폴더는 제외 대상에서 뺀다.
 !front/src/data/
+
+# Let's Encrypt 발급물 (인증서·개인키). 절대 커밋하지 않는다.
+deploy/certbot/
