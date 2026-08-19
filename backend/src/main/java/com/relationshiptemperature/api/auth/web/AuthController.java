@@ -18,10 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class AuthController {
 
-    private final CurrentUserService currentUserService;
+    static final String POST_LOGIN_REDIRECT_URI = "postLoginRedirectUri";
 
-    public AuthController(CurrentUserService currentUserService) {
+    private final CurrentUserService currentUserService;
+    private final OAuthRedirectUriValidator redirectUriValidator;
+
+    public AuthController(CurrentUserService currentUserService, OAuthRedirectUriValidator redirectUriValidator) {
         this.currentUserService = currentUserService;
+        this.redirectUriValidator = redirectUriValidator;
     }
 
     @GetMapping("/auth/kakao/authorize")
@@ -29,8 +33,9 @@ public class AuthController {
             @RequestParam(required = false) String redirectUri,
             HttpServletRequest request
     ) {
-        if (redirectUri != null && !redirectUri.isBlank()) {
-            request.getSession(true).setAttribute("postLoginRedirectUri", redirectUri);
+        String validatedRedirectUri = redirectUriValidator.validate(redirectUri);
+        if (validatedRedirectUri != null) {
+            request.getSession(true).setAttribute(POST_LOGIN_REDIRECT_URI, validatedRedirectUri);
         }
         return ResponseEntity.status(302)
                 .location(URI.create("/oauth2/authorization/kakao"))
