@@ -9,4 +9,4 @@ data/
 uploads/
 logs/
 tmp/
-./frontend
+/frontend/
