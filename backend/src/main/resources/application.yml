@@ -2,7 +2,7 @@ spring:
   application:
     name: relationship-temperature-api
   mongodb:
-    uri: ${MONGODB_URI:mongodb://relationship_temperature:relationship_temperature@localhost:27017/relationship_temperature?authSource=admin}
+    uri: ${MONGODB_URI:mongodb://relationship_temperature:relationship_temperature@localhost:27017/relationship_temperature?authSource=admin&uuidRepresentation=standard}
   data:
     mongodb:
       auto-index-creation: true

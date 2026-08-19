@@ -95,7 +95,6 @@ public class ConversationFileService {
                     ))
                     .toList());
             fileRepository.flush();
-            messageRepository.flush();
             return file;
         } catch (ApiException exception) {
             if (stored != null && exception.errorCode() != ErrorCode.DUPLICATE_CONVERSATION_FILE) {
@@ -133,6 +132,7 @@ public class ConversationFileService {
         } catch (IOException exception) {
             throw new ApiException(ErrorCode.INTERNAL_ERROR);
         }
+        messageRepository.deleteAllByConversationFileId(fileId);
         fileRepository.delete(file);
     }
 

@@ -44,11 +44,12 @@ public class AnalysisJobRunner {
         Relationship relationship = relationshipRepository.findById(job.getRelationshipId()).orElseThrow();
         try {
             update(job, AnalysisStage.LOADING_CONVERSATION, 10);
-            update(job, AnalysisStage.ANALYZING_MESSAGE_PATTERNS, 20);
+            update(job, AnalysisStage.ANALYZING_MESSAGE_PATTERNS, 30);
+            update(job, AnalysisStage.ANALYZING_EMOTIONAL_FLOW, 60);
             AiAnalysisClient.AnalysisResult result = analyzeWithRetry(new AiAnalysisClient.AnalysisRequest(
                     job.getId(), job.getConversationFileId(), relationship.getRelationshipType()
             ));
-            update(job, AnalysisStage.CALCULATING_PRQC, 90);
+            update(job, AnalysisStage.CALCULATING_PRQC, 80);
             update(job, AnalysisStage.CALCULATING_RELATIONSHIP_SCORE, 95);
             RelationshipReport report = reportService.create(
                     job.getId(), job.getCheckInId(), relationship, result

@@ -1,51 +1,48 @@
 package com.relationshiptemperature.api.conversation.domain;
 
-import com.relationshiptemperature.api.common.persistence.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(
-        name = "conversation_messages",
-        uniqueConstraints = @UniqueConstraint(
+@Document(collection = "conversation_messages")
+@CompoundIndexes({
+        @CompoundIndex(
                 name = "uk_conversation_message_file_sequence",
-                columnNames = {"conversation_file_id", "sequence_number"}
-        ),
-        indexes = {
-                @Index(name = "idx_conversation_message_file_sequence", columnList = "conversation_file_id,sequence_number"),
-                @Index(name = "idx_conversation_message_relationship", columnList = "relationship_id")
-        }
-)
-public class ConversationMessage extends BaseEntity {
+                def = "{'conversation_file_id': 1, 'sequence_number': 1}",
+                unique = true
+        )
+})
+public class ConversationMessage {
 
-    @Column(name = "conversation_file_id", nullable = false)
+    @Id
+    private UUID id;
+
+    @Indexed
+    @Field("conversation_file_id")
     private UUID conversationFileId;
 
-    @Column(name = "relationship_id", nullable = false)
+    @Indexed
+    @Field("relationship_id")
     private UUID relationshipId;
 
-    @Column(name = "sequence_number", nullable = false)
+    @Field("sequence_number")
     private int sequenceNumber;
 
-    @Column(name = "sent_at", nullable = false)
+    @Field("sent_at")
     private Instant sentAt;
 
-    @Column(name = "sender_name", nullable = false, length = 100)
+    @Field("sender_name")
     private String senderName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "participant_role", nullable = false, length = 20)
+    @Field("participant_role")
     private ConversationParticipantRole participantRole;
 
-    @Column(nullable = false, length = 20000)
     private String content;
 
     protected ConversationMessage() {
@@ -60,6 +57,7 @@ public class ConversationMessage extends BaseEntity {
             ConversationParticipantRole participantRole,
             String content
     ) {
+        this.id = UUID.randomUUID();
         this.conversationFileId = Objects.requireNonNull(conversationFileId, "conversationFileId");
         this.relationshipId = Objects.requireNonNull(relationshipId, "relationshipId");
         if (sequenceNumber < 0) {
@@ -79,6 +77,7 @@ public class ConversationMessage extends BaseEntity {
         return value;
     }
 
+    public UUID getId() { return id; }
     public UUID getConversationFileId() { return conversationFileId; }
     public UUID getRelationshipId() { return relationshipId; }
     public int getSequenceNumber() { return sequenceNumber; }

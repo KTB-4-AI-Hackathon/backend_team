@@ -1,6 +1,6 @@
 spring:
   mongodb:
-    uri: mongodb://localhost:27017/relationship_temperature_chat_test
+    uri: mongodb://relationship_temperature:relationship_temperature@localhost:27017/relationship_temperature_chat_test?authSource=admin&uuidRepresentation=standard
   data:
     mongodb:
       auto-index-creation: false

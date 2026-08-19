@@ -19,6 +19,7 @@ import com.relationshiptemperature.api.relationship.repository.RelationshipRepos
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +40,11 @@ class ConversationFileControllerIntegrationTest {
     @Autowired RelationshipRepository relationshipRepository;
     @Autowired ConversationFileRepository fileRepository;
     @Autowired ConversationMessageRepository messageRepository;
+
+    @AfterEach
+    void cleanMongoMessages() {
+        messageRepository.deleteAll();
+    }
 
     @Test
     void uploadsCsvAndPersistsOrderedNormalizedMessages() throws Exception {
