@@ -3,16 +3,25 @@ package com.relationshiptemperature.api.report.domain;
 import com.relationshiptemperature.api.common.persistence.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
 @Table(name = "relationship_reports", indexes = {
-        @Index(name = "idx_report_relationship_analyzed", columnList = "relationship_id,analyzed_at")
+        @Index(name = "idx_report_relationship_analyzed", columnList = "relationship_id,analyzed_at"),
+        @Index(name = "idx_report_relationship_week", columnList = "relationship_id,week_start,analyzed_at"),
+        @Index(name = "idx_report_user_week", columnList = "user_id,week_start,relationship_id,analyzed_at")
 })
 public class RelationshipReport extends BaseEntity {
+
+    public static final String DEFAULT_DISCLAIMER =
+            "대화에서 관찰된 패턴을 바탕으로 한 참고 정보이며 관계를 진단하거나 단정하지 않습니다.";
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -28,6 +37,19 @@ public class RelationshipReport extends BaseEntity {
 
     @Column(name = "score_change")
     private Integer scoreChange;
+
+    @Column(name = "week_start", nullable = false)
+    private LocalDate weekStart;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_code", nullable = false, length = 30)
+    private ReportStatus statusCode;
+
+    @Column(name = "status_label", nullable = false, length = 50)
+    private String statusLabel;
+
+    @Column(nullable = false, length = 1000)
+    private String disclaimer;
 
     @Column(nullable = false)
     private int satisfaction;
@@ -65,25 +87,35 @@ public class RelationshipReport extends BaseEntity {
             UUID analysisJobId,
             int overallScore,
             Integer scoreChange,
+            LocalDate weekStart,
             PrqcScores scores,
             String modelVersion,
             String scoringPolicyVersion,
             Instant analyzedAt
     ) {
+        validateScore(overallScore, "overallScore");
+        if (scoreChange != null && (scoreChange < -100 || scoreChange > 100)) {
+            throw new IllegalArgumentException("scoreChange must be between -100 and 100");
+        }
         this.userId = userId;
         this.relationshipId = relationshipId;
         this.analysisJobId = analysisJobId;
         this.overallScore = overallScore;
         this.scoreChange = scoreChange;
+        this.weekStart = Objects.requireNonNull(weekStart, "weekStart");
+        this.statusCode = ReportStatus.fromScore(overallScore);
+        this.statusLabel = statusCode.label();
+        this.disclaimer = DEFAULT_DISCLAIMER;
+        Objects.requireNonNull(scores, "scores");
         this.satisfaction = scores.satisfaction();
         this.commitment = scores.commitment();
         this.intimacy = scores.intimacy();
         this.trust = scores.trust();
         this.passion = scores.passion();
         this.love = scores.love();
-        this.modelVersion = modelVersion;
-        this.scoringPolicyVersion = scoringPolicyVersion;
-        this.analyzedAt = analyzedAt;
+        this.modelVersion = requireText(modelVersion, "modelVersion");
+        this.scoringPolicyVersion = requireText(scoringPolicyVersion, "scoringPolicyVersion");
+        this.analyzedAt = Objects.requireNonNull(analyzedAt, "analyzedAt");
     }
 
     public UUID getUserId() { return userId; }
@@ -91,6 +123,10 @@ public class RelationshipReport extends BaseEntity {
     public UUID getAnalysisJobId() { return analysisJobId; }
     public int getOverallScore() { return overallScore; }
     public Integer getScoreChange() { return scoreChange; }
+    public LocalDate getWeekStart() { return weekStart; }
+    public ReportStatus getStatusCode() { return statusCode; }
+    public String getStatusLabel() { return statusLabel; }
+    public String getDisclaimer() { return disclaimer; }
     public PrqcScores getPrqcScores() {
         return new PrqcScores(satisfaction, commitment, intimacy, trust, passion, love);
     }
@@ -98,5 +134,27 @@ public class RelationshipReport extends BaseEntity {
     public String getScoringPolicyVersion() { return scoringPolicyVersion; }
     public Instant getAnalyzedAt() { return analyzedAt; }
 
-    public record PrqcScores(int satisfaction, int commitment, int intimacy, int trust, int passion, int love) {}
+    private static String requireText(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " must not be blank");
+        }
+        return value;
+    }
+
+    private static void validateScore(int score, String field) {
+        if (score < 0 || score > 100) {
+            throw new IllegalArgumentException(field + " must be between 0 and 100");
+        }
+    }
+
+    public record PrqcScores(int satisfaction, int commitment, int intimacy, int trust, int passion, int love) {
+        public PrqcScores {
+            validateScore(satisfaction, "satisfaction");
+            validateScore(commitment, "commitment");
+            validateScore(intimacy, "intimacy");
+            validateScore(trust, "trust");
+            validateScore(passion, "passion");
+            validateScore(love, "love");
+        }
+    }
 }

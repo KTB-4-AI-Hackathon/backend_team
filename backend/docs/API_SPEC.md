@@ -119,7 +119,7 @@ MVP 범위는 다음과 같다.
 | 401 | 로그인 필요/세션 만료 | `AUTH_REQUIRED`, `SESSION_EXPIRED` |
 | 403 | CSRF/소유권/권한 오류 | `CSRF_INVALID`, `FORBIDDEN` |
 | 404 | 리소스 없음 | `RELATIONSHIP_NOT_FOUND` |
-| 409 | 현재 상태와 충돌 | `ANALYSIS_ALREADY_RUNNING`, `IDEMPOTENCY_KEY_REUSED` |
+| 409 | 현재 상태와 충돌 | `ANALYSIS_ALREADY_RUNNING`, `REPORT_REQUIRED`, `IDEMPOTENCY_KEY_REUSED` |
 | 413 | 파일 크기 초과 | `FILE_TOO_LARGE` |
 | 415 | 지원하지 않는 파일 형식 | `UNSUPPORTED_FILE_TYPE` |
 | 422 | 의미 검증 실패 | `INVALID_KAKAO_EXPORT`, `CHECK_IN_INCOMPLETE` |
@@ -253,6 +253,7 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
 | GET | `/conversation-files/{fileId}` | 업로드 검증 상태 조회 |
 | DELETE | `/conversation-files/{fileId}` | 미사용/업로드 파일 삭제 |
 | POST | `/relationships/{relationshipId}/check-ins` | 체크인 응답 저장 |
+| GET | `/relationships/{relationshipId}/check-ins` | 관계별·주차별 체크인 이력 조회 |
 | POST | `/relationships/{relationshipId}/analyses` | 분석 작업 시작 |
 | GET | `/analysis-jobs/{jobId}` | 분석 진행률/결과 조회 |
 | GET | `/relationships/{relationshipId}/report` | 인물별 PRQC 리포트 조회 |
@@ -345,6 +346,7 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
         "name": "최현우",
         "initial": "현",
         "relationshipType": "COWORKER",
+        "status": "ACTIVE",
         "score": 45,
         "statusCode": "NEEDS_ATTENTION",
         "statusLabel": "주의 필요",
@@ -376,11 +378,19 @@ AI 호출 예상 시간이 20~30초인 MVP에서는 Worker가 60~120초 내부 �
 
 집계 규칙:
 
-- `change`는 해당 주 최신 점수와 직전 주 최신 점수의 차이다.
+- `weekOf`는 해당 날짜가 포함된 월요일~일요일 주차로 정규화한다. 생략하면 사용자 타임존의 현재 날짜를 사용한다.
+- 카드에는 선택 주차까지 완료된 관계별 최신 리포트를 사용한다. 선택 주차 이후의 미래 리포트는 포함하지 않는다.
+- 분석 이력이 없는 `DRAFT` 관계와 삭제 중인 관계는 카드와 평균에서 제외한다.
+- 이전 완료 리포트가 있는 `ANALYZING`, `ANALYSIS_FAILED` 관계는 마지막 결과를 유지할 수 있다.
+- 각 카드의 `change`는 해당 카드 리포트 주차의 점수와 직전 주 최신점수 차이다.
 - 직전 주 데이터가 없으면 `change`는 `null`이다. 이때 화살표를 표시하지 않는다.
+- `averageScore`는 반환된 관계 카드 전체의 점수 평균을 반올림한다.
+- `averageChange`는 `change != null`인 카드만 평균을 내어 반올림하며, 대상이 없으면 `null`이다.
 - `largestChanges`는 `abs(change)` 내림차순 상위 3개다.
 - `needsAttention`은 점수/변화 정책에 의해 서버가 선정한다. MVP 기본 규칙은 `score < 60 OR change <= -10`이다.
-- 분석 이력이 없는 `DRAFT` 관계는 카드 점수 목록과 평균 계산에서 제외한다.
+- `sparkline`은 선택 주차를 포함한 최근 8주 범위에서 주차별 최신 리포트 하나만 오래된 순서로 반환한다. 데이터가 없는 주차는 생략한다.
+- 동일 주차에 재분석이 여러 번 있어도 카드와 스파크라인에는 가장 최근 완료 리포트만 사용한다.
+- 관계 카드 정렬은 `ABS_CHANGE_DESC`, `SCORE_DESC`, `SCORE_ASC`, `UPDATED_DESC`를 지원한다.
 
 ### 6.6 관계 목록
 
@@ -521,9 +531,21 @@ MVP 질문:
 | `RELATIONSHIP_FEELING` | 요즘 이 사람과의 관계, 어떻게 느껴지세요? | 많이 불편해요 | 매우 좋아요 |
 | `CONVERSATION_COMFORT` | 최근 이 사람과 대화할 때 얼마나 편안함을 느끼시나요? | 전혀 편안하지 않아요 | 매우 편안해요 |
 
-응답: `201 Created` + `CheckIn` 객체.
+서버는 사용자 타임존의 제출일이 속한 월요일을 `weekStart`로 계산한다. 같은 관계와
+같은 주차에는 체크인을 하나만 유지한다.
 
-같은 관계/같은 주차에 다시 제출하면 새 이력을 추가하기보다 최신 응답을 갱신하는 정책을 권장한다. API 구현은 `409 CHECK_IN_ALREADY_EXISTS`와 기존 ID를 반환하거나, 별도 `PUT`으로 갱신하도록 선택할 수 있다. OpenAPI 초안은 새 기록 생성을 기준으로 한다.
+- 해당 주차의 최초 제출: `201 Created` + `CheckIn` 객체
+- 같은 주차 재제출: 기존 체크인 ID와 `createdAt`은 유지하고 두 응답을 갱신한 뒤
+  `200 OK` + `CheckIn` 객체
+- 두 질문은 각각 정확히 한 번 포함해야 하며, 누락·중복은
+  `422 CHECK_IN_INCOMPLETE`, 1~7 범위 위반은 `400 INVALID_REQUEST`
+
+`GET /relationships/{relationshipId}/check-ins?from=2026-08-01&to=2026-08-31`
+
+관계의 주차별 체크인 이력을 `weekStart` 최신순으로 조회한다. `from`과 `to`는 모두
+선택 사항이며 각 경곗값을 포함한다. 두 값이 모두 있고 `from > to`이면
+`400 INVALID_REQUEST`를 반환한다. 현재 데이터 규모에서는 단일 페이지 응답을 사용하며
+`meta.hasNext`는 `false`다.
 
 MVP에서 체크인은 분석 시점의 사용자 주관 신호를 보존하기 위한 별도 데이터다. `checkInId`는 분석 Job 및 리포트와 연결하지만 체크인 응답을 AI 서버에 전달하지 않으며 PRQC 6요소와 `overall.score` 산식에도 반영하지 않는다. 향후 결합 점수를 도입할 때는 새로운 `scoringPolicyVersion`으로 명시한다.
 
@@ -655,7 +677,7 @@ Job이 이미 `202`로 접수된 후 발생한 AI 오류는 프론트엔드에 �
     },
     "evidences": [
       {
-        "id": "ev_01J5P8K9W8G0H7P9T0W1K2J3M4",
+        "id": "0198c8a7-4100-7000-8000-000000000001",
         "component": "passion",
         "score": 40,
         "summary": "최근 한 달간 대화 빈도가 주 평균 3.2회에서 1.1회로 줄어든 것이 관찰됐어요.",
@@ -671,7 +693,7 @@ Job이 이미 `202`로 접수된 후 발생한 AI 오류는 프론트엔드에 �
     "trend": [
       {
         "weekStart": "2026-06-29",
-        "label": "8주 전",
+        "label": "7주 전",
         "score": 75
       },
       {
@@ -693,12 +715,18 @@ Job이 이미 `202`로 접수된 후 발생한 AI 오류는 프론트엔드에 �
 - 점수에는 반드시 `evidences` 또는 점수 산정 설명을 함께 제공한다.
 - AI 서버는 `prqc` 6개 구성요소와 `evidences`를 계산한다.
 - 백엔드는 관계 유형별 버전된 가중치 정책으로 canonical `overall.score`를 계산하고, 프론트엔드는 이 값을 재계산하지 않는다.
+- 리포트의 `weekStart`는 분석 Job에 연결된 체크인의 주차 시작일을 사용한다.
+- `overall.change`는 단순 직전 분석이 아니라 직전 주차의 가장 최근 완료 리포트 점수와 비교한다. 직전 주 리포트가 없으면 `null`이다.
+- 추이는 주차별로 가장 최근 완료된 리포트 하나만 포함한다. 같은 주에 재분석해도 추이 점이 중복되지 않는다.
+- `statusCode`, `statusLabel`, `disclaimer`는 리포트 생성 시점의 스냅샷으로 저장하여 이후 정책 변경이 과거 리포트 표현을 바꾸지 않게 한다.
+- 각 관찰 근거의 `score`는 해당 `component`의 PRQC 점수와 일치해야 한다.
 - `modelVersion`은 AI의 PRQC 분석 버전이며 `prqc-YYYY-MM-DD.N` 형식을 권장한다.
 - `scoringPolicyVersion`은 백엔드 종합점수 산식 버전이며 Semantic Versioning을 사용한다.
 - AI가 평가 목적으로 제안 종합점수를 반환하더라도 canonical `overall.score`로 저장하지 않는다.
 - 근거 문장은 확정적 인과관계 대신 관찰 사실로 작성한다.
 - 원문 메시지를 그대로 보여줘야 한다면 별도 사용자 동의, 마스킹, 최소 노출 정책이 필요하다. MVP 응답은 집계 근거를 우선한다.
 - `weeks` 허용값은 4~52, 기본값은 8이다.
+- 완료된 리포트가 없으면 `409 REPORT_REQUIRED`를 반환한다.
 
 ### 6.14 최근 상담 목록
 

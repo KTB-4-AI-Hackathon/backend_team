@@ -13,6 +13,7 @@ public enum ErrorCode {
     UNSUPPORTED_FILE_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "지원하지 않는 파일 형식입니다."),
     INVALID_KAKAO_EXPORT(HttpStatus.UNPROCESSABLE_CONTENT, "카카오톡 대화 내보내기 파일을 확인할 수 없습니다."),
     CHECK_IN_INCOMPLETE(HttpStatus.UNPROCESSABLE_CONTENT, "체크인 응답이 완전하지 않습니다."),
+    REPORT_REQUIRED(HttpStatus.CONFLICT, "완료된 관계 리포트가 필요합니다."),
     ANALYSIS_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "현재 분석을 사용할 수 없습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 

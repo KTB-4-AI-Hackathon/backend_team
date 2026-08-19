@@ -27,30 +27,16 @@ public class CheckIn extends BaseEntity {
     @Column(name = "week_start", nullable = false)
     private LocalDate weekStart;
 
-    @Column(name = "relationship_feeling", nullable = false)
-    private int relationshipFeeling;
-
-    @Column(name = "conversation_comfort", nullable = false)
-    private int conversationComfort;
-
     protected CheckIn() {
     }
 
-    public CheckIn(UUID userId, UUID relationshipId, LocalDate weekStart, int feeling, int comfort) {
+    public CheckIn(UUID userId, UUID relationshipId, LocalDate weekStart) {
         this.userId = userId;
         this.relationshipId = relationshipId;
         this.weekStart = weekStart;
-        update(feeling, comfort);
-    }
-
-    public void update(int feeling, int comfort) {
-        this.relationshipFeeling = feeling;
-        this.conversationComfort = comfort;
     }
 
     public UUID getUserId() { return userId; }
     public UUID getRelationshipId() { return relationshipId; }
     public LocalDate getWeekStart() { return weekStart; }
-    public int getRelationshipFeeling() { return relationshipFeeling; }
-    public int getConversationComfort() { return conversationComfort; }
 }

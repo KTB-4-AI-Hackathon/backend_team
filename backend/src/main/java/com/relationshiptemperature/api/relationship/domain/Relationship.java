@@ -94,11 +94,14 @@ public class Relationship extends BaseEntity {
         if (name == null || name.isBlank()) {
             return "?";
         }
-        int codePointCount = name.codePointCount(0, name.length());
-        int index = codePointCount >= 2 ? 1 : 0;
-        int start = name.offsetByCodePoints(0, index);
-        int end = name.offsetByCodePoints(start, 1);
-        return name.substring(start, end);
+        int[] visibleCodePoints = name.codePoints()
+                .filter(codePoint -> !Character.isWhitespace(codePoint))
+                .toArray();
+        if (visibleCodePoints.length == 0) {
+            return "?";
+        }
+        int index = visibleCodePoints.length >= 2 ? 1 : 0;
+        return new String(visibleCodePoints, index, 1);
     }
 
     public RelationshipType getRelationshipType() {

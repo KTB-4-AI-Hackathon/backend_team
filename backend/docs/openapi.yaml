@@ -134,6 +134,9 @@ paths:
       tags: [Dashboard]
       operationId: getDashboard
       summary: 주간 관계 대시보드 조회
+      description: |
+        선택 주차까지 완료된 관계별 최신 리포트로 카드와 평균을 집계한다.
+        미래 주차의 리포트와 분석 이력이 없는 관계는 제외한다.
       parameters:
         - name: weekOf
           in: query
@@ -371,6 +374,41 @@ paths:
   /relationships/{relationshipId}/check-ins:
     parameters:
       - $ref: "#/components/parameters/RelationshipId"
+    get:
+      tags: [Check-ins]
+      operationId: listCheckIns
+      summary: 관계별 주차 체크인 이력 조회
+      description: 주차 시작일(월요일) 기준 최신순으로 반환한다.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: 조회할 주차 시작일의 최솟값(포함)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: 조회할 주차 시작일의 최댓값(포함)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: 체크인 이력 조회 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInListEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags: [Check-ins]
       operationId: createCheckIn
@@ -386,7 +424,13 @@ paths:
               $ref: "#/components/schemas/CreateCheckInRequest"
       responses:
         "201":
-          description: 체크인 저장 완료
+          description: 해당 주차 체크인 최초 저장 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInEnvelope"
+        "200":
+          description: 해당 주차의 기존 체크인 갱신 완료
           content:
             application/json:
               schema:
@@ -479,6 +523,7 @@ paths:
         - $ref: "#/components/parameters/RelationshipId"
         - name: weeks
           in: query
+          description: 최신 리포트의 주차를 포함한 조회 범위. 화면에서는 4주 또는 8주를 권장한다.
           schema:
             type: integer
             minimum: 4
@@ -496,7 +541,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: 완료된 리포트가 없음
+          description: 완료된 리포트가 없음 (`REPORT_REQUIRED`)
           content:
             application/json:
               schema:
@@ -1067,6 +1112,7 @@ components:
     DashboardSummary:
       type: object
       additionalProperties: false
+      description: 관계 카드 전체의 점수 평균과, null이 아닌 변화량의 평균을 반올림한 주간 요약
       required: [relationshipCount, averageScore, averageChange]
       properties:
         relationshipCount:
@@ -1091,6 +1137,7 @@ components:
           maximum: 100
         sparkline:
           type: array
+          maxItems: 8
           items:
             $ref: "#/components/schemas/Score"
     AttentionItem:
@@ -1120,15 +1167,18 @@ components:
           $ref: "#/components/schemas/DashboardSummary"
         relationships:
           type: array
+          description: 선택 주차까지 완료된 관계별 최신 리포트 카드. 스파크라인은 최근 8주 주차별 최신점수다.
           items:
             $ref: "#/components/schemas/RelationshipSummary"
         largestChanges:
           type: array
+          description: 변화량 절댓값 내림차순 상위 3개. 변화량이 null인 관계는 제외한다.
           maxItems: 3
           items:
             $ref: "#/components/schemas/LargestChange"
         needsAttention:
           type: array
+          description: 점수 60 미만 또는 전주 대비 변화량 -10 이하인 관계
           items:
             $ref: "#/components/schemas/AttentionItem"
     DashboardEnvelope:
@@ -1215,7 +1265,7 @@ components:
     CheckIn:
       type: object
       additionalProperties: false
-      required: [id, relationshipId, answers, weekStart, createdAt]
+      required: [id, relationshipId, answers, weekStart, createdAt, updatedAt]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
@@ -1230,12 +1280,24 @@ components:
           format: date
         createdAt:
           $ref: "#/components/schemas/DateTime"
+        updatedAt:
+          $ref: "#/components/schemas/DateTime"
     CheckInEnvelope:
       type: object
       required: [data]
       properties:
         data:
           $ref: "#/components/schemas/CheckIn"
+    CheckInListEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckIn"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
 
     StartAnalysisRequest:
       type: object
@@ -1318,6 +1380,7 @@ components:
         score:
           $ref: "#/components/schemas/Score"
         change:
+          description: 직전 주의 최신 리포트 대비 변화량. 직전 주 리포트가 없으면 null
           $ref: "#/components/schemas/ScoreChange"
         statusCode:
           $ref: "#/components/schemas/ScoreStatusCode"
@@ -1362,7 +1425,7 @@ components:
       required: [id, component, score, summary]
       properties:
         id:
-          type: string
+          $ref: "#/components/schemas/Uuid"
         component:
           type: string
           enum: [satisfaction, commitment, intimacy, trust, passion, love]
@@ -1377,11 +1440,13 @@ components:
     TrendPoint:
       type: object
       additionalProperties: false
+      description: 한 주에 분석이 여러 번 있으면 가장 최근 완료 리포트 한 건만 포함한다.
       required: [weekStart, label, score]
       properties:
         weekStart:
           type: string
           format: date
+          description: 분석에 연결된 체크인의 주차 시작일(월요일)
         label:
           type: string
         score:
@@ -1433,6 +1498,7 @@ components:
           description: 백엔드의 관계 유형별 종합점수 가중치 정책 버전
         disclaimer:
           type: string
+          description: 리포트 생성 시점에 저장된 비진단 면책문구
     ReportEnvelope:
       type: object
       required: [data]

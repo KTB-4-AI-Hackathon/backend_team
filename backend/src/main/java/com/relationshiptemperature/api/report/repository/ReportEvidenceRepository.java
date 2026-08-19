@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReportEvidenceRepository extends JpaRepository<ReportEvidence, UUID> {
 
-    List<ReportEvidence> findAllByReportIdOrderByScoreAsc(UUID reportId);
+    List<ReportEvidence> findAllByReportId(UUID reportId);
 }
