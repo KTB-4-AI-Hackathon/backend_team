@@ -71,11 +71,15 @@ function ChatRoom({ consultationId, rooms }) {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [resourcesByMessage, setResourcesByMessage] = useState({});
+  const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
   const sourceRef = useRef(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     setLoading(true);
+    sendingRef.current = false;
+    setSending(false);
     listMessages(consultationId)
       .then(setMessages)
       .finally(() => setLoading(false));
@@ -93,7 +97,9 @@ function ChatRoom({ consultationId, rooms }) {
 
   async function handleSend(text) {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
     setInput('');
     try {
       const accepted = await sendMessageApi(consultationId, trimmed);
@@ -108,17 +114,25 @@ function ChatRoom({ consultationId, rooms }) {
         },
         onCompleted: () => {
           sourceRef.current?.close();
+          sendingRef.current = false;
+          setSending(false);
           refreshMessages();
         },
         onFailed: ({ messageId }) => {
           sourceRef.current?.close();
+          sendingRef.current = false;
+          setSending(false);
           setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, status: 'FAILED' } : m)));
         },
         onError: () => {
           sourceRef.current?.close();
+          sendingRef.current = false;
+          setSending(false);
         },
       });
     } catch (err) {
+      sendingRef.current = false;
+      setSending(false);
       window.alert(err.message || '메시지를 보내지 못했어요.');
     }
   }
@@ -164,7 +178,7 @@ function ChatRoom({ consultationId, rooms }) {
       <div className="chat-input-area">
         <div className="chip-suggest-row">
           {SUGGESTED_QUESTIONS.map((q) => (
-            <button key={q} className="suggest-chip" onClick={() => handleSend(q)}>{q}</button>
+            <button key={q} className="suggest-chip" disabled={sending} onClick={() => handleSend(q)}>{q}</button>
           ))}
         </div>
         <div className="chat-input-row">
@@ -172,9 +186,13 @@ function ChatRoom({ consultationId, rooms }) {
             placeholder="궁금한 점을 편하게 물어보세요"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSend(input); }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || e.isComposing) return;
+              e.preventDefault();
+              handleSend(input);
+            }}
           />
-          <button className="send-btn" aria-label="전송" onClick={() => handleSend(input)}>
+          <button className="send-btn" aria-label="전송" disabled={sending || !input.trim()} onClick={() => handleSend(input)}>
             <SendIcon />
           </button>
         </div>
