@@ -9,6 +9,7 @@ data/
 uploads/
 logs/
 tmp/
+.claude/
 # 프론트엔드(front/)는 이 저장소에서 함께 관리한다. 의존성·빌드 산출물만 제외한다.
 /frontend/
 front/node_modules/

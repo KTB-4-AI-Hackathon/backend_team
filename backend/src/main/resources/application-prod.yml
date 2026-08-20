@@ -20,3 +20,7 @@ server:
 logging:
   level:
     root: INFO
+
+app:
+  ai:
+    mode: ${AI_MODE:http}
