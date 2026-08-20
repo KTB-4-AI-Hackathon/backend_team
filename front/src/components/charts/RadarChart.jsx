@@ -21,23 +21,6 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
     );
   });
 
-  const axes = Array.from({ length: n }, (_, i) => {
-    // Axis guides stop at their actual score point instead of extending past it.
-    const score = Math.max(0, Math.min(100, values[i] ?? 0));
-    const [x, y] = polar((maxR * score) / 100, i, n);
-    return (
-      <line
-        key={i}
-        className={`radar-axis${activeIndex === i ? ' is-active' : ''}`}
-        x1={cx}
-        y1={cy}
-        x2={x.toFixed(1)}
-        y2={y.toFixed(1)}
-        stroke="rgba(196,182,255,0.14)"
-      />
-    );
-  });
-
   const cutR = maxR * (ATTENTION_THRESHOLD / 100);
   const cutPts = Array.from({ length: n }, (_, i) => polar(cutR, i, n).join(',')).join(' ');
 
@@ -55,7 +38,6 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
         strokeDasharray="4 3"
         opacity="0.85"
       />
-      {axes}
       <polygon
         className="radar-data-area"
         points={dataPoly}
@@ -68,12 +50,18 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
         return (
           <g key={i}>
             <circle
-              className={`radar-data-point${activeIndex === i ? ' is-active' : ''}`}
+              className={`radar-point${activeIndex === i ? ' is-active' : ''}`}
               cx={p[0].toFixed(1)}
               cy={p[1].toFixed(1)}
               r="4"
               fill={low ? 'var(--accent-amber)' : 'var(--accent-pink)'}
-              stroke={low ? '#2a1638' : 'none'}
+              style={{ animationDelay: `${i * -0.42}s` }}
+              role="button"
+              tabIndex="0"
+              onMouseEnter={() => onActiveChange?.(i)}
+              onMouseLeave={() => onActiveChange?.(null)}
+              onFocus={() => onActiveChange?.(i)}
+              onBlur={() => onActiveChange?.(null)}
             />
             {activeIndex === i && (
               <circle className="radar-focus-ring" cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r="8" />

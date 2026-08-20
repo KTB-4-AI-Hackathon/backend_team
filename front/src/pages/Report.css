@@ -252,42 +252,37 @@
   transform-origin: center;
   animation: radar-data-fill 500ms cubic-bezier(0.22, 0.9, 0.28, 1) 130ms both;
 }
-.radar-data-point {
+.radar-point {
   transform-box: fill-box;
   transform-origin: center;
-  animation: radar-point-in 280ms ease-out 360ms both;
+  animation: radar-point-twinkle 2.8s ease-in-out infinite;
+  cursor: pointer;
 }
-.radar-axis,
 .radar-label,
-.radar-data-point {
+.radar-point {
   transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease, filter 180ms ease;
 }
 .radar-label {
   cursor: pointer;
   outline: none;
 }
-.radar-chart.has-active .radar-axis:not(.is-active),
 .radar-chart.has-active .radar-label:not(.is-active),
-.radar-chart.has-active .radar-data-point:not(.is-active) {
+.radar-chart.has-active .radar-point:not(.is-active) {
   opacity: 0.36;
-}
-.radar-axis.is-active {
-  stroke: var(--accent-lavender);
-  stroke-width: 2.4;
-  filter: drop-shadow(0 0 3px rgba(165, 149, 232, 0.78));
 }
 .radar-label.is-active {
   fill: var(--accent-pink);
   filter: drop-shadow(0 0 3px rgba(226, 160, 201, 0.65));
 }
-.radar-data-point.is-active {
-  filter: drop-shadow(0 0 4px rgba(226, 160, 201, 0.9));
+.radar-point.is-active {
+  filter: drop-shadow(0 0 5px rgba(226, 160, 201, 0.95));
 }
 .radar-focus-ring {
   fill: none;
   stroke: var(--accent-lavender);
   stroke-width: 1.5;
   opacity: 0.9;
+  pointer-events: none;
   transform-box: fill-box;
   transform-origin: center;
   animation: radar-focus-ring 800ms ease-out infinite;
@@ -316,14 +311,15 @@
     transform: scale(1);
   }
 }
-@keyframes radar-point-in {
-  from {
-    opacity: 0;
-    transform: scale(0);
+@keyframes radar-point-twinkle {
+  0%,
+  100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 1px rgba(226, 160, 201, 0.28));
   }
-  to {
+  50% {
     opacity: 1;
-    transform: scale(1);
+    filter: drop-shadow(0 0 5px rgba(226, 160, 201, 0.72));
   }
 }
 .prqc-card .radar-legend {
@@ -334,7 +330,7 @@
 @media (prefers-reduced-motion: reduce) {
   .radar-chart,
   .radar-data-area,
-  .radar-data-point,
+  .radar-point,
   .radar-focus-ring {
     animation: none;
   }
