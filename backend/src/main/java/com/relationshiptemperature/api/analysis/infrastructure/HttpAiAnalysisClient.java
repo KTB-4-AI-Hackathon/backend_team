@@ -85,7 +85,8 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
         return new AnalysisResult(
                 response.modelVersion(), response.promptVersion(), response.processedMessageCount(),
                 response.components().toDomain(),
-                response.evidences().stream().map(EvidenceDto::toDomain).toList()
+                response.evidences().stream().map(EvidenceDto::toDomain).toList(),
+                response.selfReportComparison()
         );
     }
 
@@ -135,6 +136,7 @@ public class HttpAiAnalysisClient implements AiAnalysisClient {
             ComponentsDto components,
             List<EvidenceDto> evidences,
             List<Object> warnings,
+            String selfReportComparison,
             Instant completedAt
     ) {}
 }

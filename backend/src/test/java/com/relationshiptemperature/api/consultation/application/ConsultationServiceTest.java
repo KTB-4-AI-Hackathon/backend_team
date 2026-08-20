@@ -129,7 +129,7 @@ class ConsultationServiceTest {
         return new RelationshipReport(
                 userId, relationshipId, UUID.randomUUID(), 70, 5,
                 LocalDate.of(2026, 8, 17), new PrqcScores(70, 70, 70, 70, 70, 70),
-                "prqc-test", "policy-test", Instant.now()
+                "prqc-test", "policy-test", "체크인과 대화 분석을 비교한 설명", Instant.now()
         );
     }
 }

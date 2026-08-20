@@ -75,6 +75,9 @@ public class RelationshipReport extends BaseEntity {
     @Column(name = "scoring_policy_version", nullable = false, length = 100)
     private String scoringPolicyVersion;
 
+    @Column(name = "self_report_comparison", nullable = false, length = 2000)
+    private String selfReportComparison;
+
     @Column(name = "analyzed_at", nullable = false)
     private Instant analyzedAt;
 
@@ -91,6 +94,7 @@ public class RelationshipReport extends BaseEntity {
             PrqcScores scores,
             String modelVersion,
             String scoringPolicyVersion,
+            String selfReportComparison,
             Instant analyzedAt
     ) {
         validateScore(overallScore, "overallScore");
@@ -115,6 +119,7 @@ public class RelationshipReport extends BaseEntity {
         this.love = scores.love();
         this.modelVersion = requireText(modelVersion, "modelVersion");
         this.scoringPolicyVersion = requireText(scoringPolicyVersion, "scoringPolicyVersion");
+        this.selfReportComparison = selfReportComparison == null ? "" : selfReportComparison.trim();
         this.analyzedAt = Objects.requireNonNull(analyzedAt, "analyzedAt");
     }
 
@@ -132,6 +137,7 @@ public class RelationshipReport extends BaseEntity {
     }
     public String getModelVersion() { return modelVersion; }
     public String getScoringPolicyVersion() { return scoringPolicyVersion; }
+    public String getSelfReportComparison() { return selfReportComparison; }
     public Instant getAnalyzedAt() { return analyzedAt; }
 
     private static String requireText(String value, String field) {

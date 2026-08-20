@@ -81,7 +81,8 @@ public interface AiAnalysisClient {
             String promptVersion,
             int processedMessageCount,
             PrqcScores components,
-            List<EvidenceResult> evidences
+            List<EvidenceResult> evidences,
+            String selfReportComparison
     ) {}
 
     record EvidenceResult(String component, int score, String summary, Metric metric) {}

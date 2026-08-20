@@ -1243,6 +1243,7 @@ HTTP `200` — 종합점수, PRQC, 근거, 추이
     "analyzedAt": "2026-08-19T06:20:00Z",
     "modelVersion": "prqc-2026-08-19.1",
     "scoringPolicyVersion": "relationship-temperature-1.0.0",
+    "selfReportComparison": "체크인에서 느낀 관계와 대화에서 관찰된 신호를 함께 비교한 설명입니다.",
     "disclaimer": "example"
   }
 }
@@ -1276,6 +1277,7 @@ HTTP `200` — 종합점수, PRQC, 근거, 추이
 | data.analyzedAt | date-time | Y | 응답에 포함되는 analyzedAt 값 |
 | data.modelVersion | string | Y | AI PRQC 분석 모델 버전 |
 | data.scoringPolicyVersion | string | Y | 백엔드의 관계 유형별 종합점수 가중치 정책 버전 |
+| data.selfReportComparison | string | Y | 사용자의 체크인 자기보고와 대화 기반 PRQC 분석에서 관찰된 신호의 일치·차이 설명 |
 | data.disclaimer | string | Y | 응답에 포함되는 disclaimer 값 |
 
 ### 오류 Response

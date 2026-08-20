@@ -79,6 +79,7 @@ public class ReportController {
             Instant analyzedAt,
             String modelVersion,
             String scoringPolicyVersion,
+            String selfReportComparison,
             String disclaimer
     ) {
         static ReportResponse from(
@@ -103,6 +104,7 @@ public class ReportController {
                     report.getAnalyzedAt(),
                     report.getModelVersion(),
                     report.getScoringPolicyVersion(),
+                    report.getSelfReportComparison(),
                     report.getDisclaimer()
             );
         }

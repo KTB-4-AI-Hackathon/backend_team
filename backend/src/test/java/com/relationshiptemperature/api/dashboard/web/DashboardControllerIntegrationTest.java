@@ -209,7 +209,8 @@ class DashboardControllerIntegrationTest {
                 List.of(new EvidenceResult(
                         "passion", score, "대화 패턴 변화가 관찰됐어요.",
                         new Metric("weeklyConversationCount", 1.0, 2.0, "회/주", "최근 4주 vs 이전 4주")
-                ))
+                )),
+                "체크인 응답과 대화 분석을 비교한 설명이에요."
         );
     }
 
