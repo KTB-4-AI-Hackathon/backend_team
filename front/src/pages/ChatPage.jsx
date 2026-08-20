@@ -48,7 +48,7 @@ export default function ChatPage() {
         <div className="rooms-panel-title">상담 기록</div>
         {!roomsLoading && rooms.length === 0 && (
           <p style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 4px' }}>
-            아직 상담이 없어요. 인물별 리포트에서 &quot;AI와 상담하기&quot;로 시작해 보세요.
+            아직 상담이 없어요. 관계 리포트에서 &quot;이 관계에 대해 이야기 하기&quot;로 시작해 보세요.
           </p>
         )}
         {rooms.map((r) => (
@@ -169,8 +169,9 @@ function ChatRoom({ consultationId, rooms }) {
     <div className="chat-main">
       <div className="chat-header">
         <div>
-          <h2>{room ? `AI 상담 (feat: ${room.relationship.name}님)` : 'AI 상담'}</h2>
-          <p>{room ? `${room.relationship.name}님과의 대화 데이터를 바탕으로 관계를 함께 살펴봐요` : ''}</p>
+          {room && <div className="chat-eyebrow">WOULDU AI</div>}
+          <h2>{room ? `${room.relationship.name}님과의 관계, 함께 정리해 볼까요?` : 'AI 상담'}</h2>
+          <p>{room ? '리포트와 대화 흐름을 바탕으로 지금 필요한 관점을 함께 살펴봐요' : ''}</p>
         </div>
       </div>
 

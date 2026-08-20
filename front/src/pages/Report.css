@@ -93,15 +93,54 @@
   padding: 34px 44px 60px;
 }
 .report-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(236px, 300px) minmax(280px, 1fr);
   align-items: center;
-  justify-content: space-between;
+  gap: 22px;
   margin-bottom: 22px;
+}
+.report-head-left {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.report-head-left > .btn {
+  flex: none;
+  white-space: nowrap;
+}
+.report-head-right {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+.report-head-right .btn {
+  white-space: nowrap;
 }
 .report-who {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.report-identity {
+  min-width: 0;
+}
+.report-eyebrow {
+  margin-bottom: 5px;
+  color: #aebaff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.report-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.report-name-row .chip {
+  flex: none;
 }
 .report-avatar {
   width: 46px;
@@ -581,8 +620,14 @@
     padding: 22px 16px 48px;
   }
   .report-head {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
     gap: 12px;
+  }
+  .report-head-left {
+    align-items: center;
+  }
+  .report-head-right .btn {
+    width: 100%;
   }
   .report-name {
     font-size: 17px;

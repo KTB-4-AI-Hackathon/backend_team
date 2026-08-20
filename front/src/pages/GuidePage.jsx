@@ -31,7 +31,7 @@ const STEPS = [
   {
     icon: ChatIcon,
     title: '5. AI 상담',
-    desc: '리포트를 바탕으로 AI 챗봇과 관계 고민을 상담해요.',
+    desc: '리포트를 바탕으로 AI 상담을 통해 관계 고민을 정리해요.',
   },
 ];
 
@@ -60,6 +60,7 @@ export default function GuidePage() {
   return (
     <section className="guide-shell">
       <div className="guide-head">
+        <div className="guide-eyebrow">HOW IT WORKS</div>
         <h2 className="guide-title">사용 가이드</h2>
         <p className="guide-sub">WouldU를 처음 사용하시나요? 이렇게 시작해보세요.</p>
       </div>

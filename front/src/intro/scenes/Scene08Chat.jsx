@@ -46,8 +46,11 @@ export default function Scene08Chat({
         </aside>
         <div className="chat-main">
           <div className="chat-header">
-            <h2>{name}님과의 상담</h2>
-            <p>{name}님과의 대화 데이터 기반 상담</p>
+            <div>
+              <div className="chat-eyebrow">WOULDU AI</div>
+              <h2>{name}님과의 관계, 함께 정리해 볼까요?</h2>
+              <p>리포트와 대화 흐름을 바탕으로 지금 필요한 관점을 함께 살펴봐요</p>
+            </div>
           </div>
           <div className="chat-scroll">
             <div className="chat-col">

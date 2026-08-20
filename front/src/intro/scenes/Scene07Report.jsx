@@ -39,17 +39,27 @@ export default function Scene07Report({
         </aside>
         <div className="report-main">
           <div className="report-head intro-rise" style={{ '--i': 0 }}>
-            <div className="report-who">
-              <img className="report-avatar point-avatar" src={pointImageFor(score)} alt="" />
-              <div>
-                <div className="report-name">{name}</div>
-                <span className="chip">{typeLabel}</span>
+            <div className="report-head-left">
+              <div className="report-who">
+                <div className="report-identity">
+                  <div className="report-eyebrow">RELATIONSHIP REPORT</div>
+                  <div className="report-name-row">
+                    <div className="report-name">{name}</div>
+                    <span className="chip">{typeLabel}</span>
+                  </div>
+                </div>
               </div>
+              <button className="btn btn-ghost" type="button" tabIndex={-1}>
+                <PlusIcon />
+                새 대화 반영하기
+              </button>
             </div>
-            <button className="btn btn-ghost" type="button" tabIndex={-1}>
-              <PlusIcon />
-              대화 내역 추가
-            </button>
+            <div className="report-head-right">
+              <button className="btn btn-primary" type="button" tabIndex={-1}>
+                <ChatIcon />
+                이 관계에 대해 이야기 하기
+              </button>
+            </div>
           </div>
           <div className="report-grid">
             <div className="card overview-card intro-rise" style={{ '--i': 1 }}>
@@ -77,7 +87,7 @@ export default function Scene07Report({
             </div>
             <div className="card prqc-card intro-rise" style={{ '--i': 2 }}>
               <div className="card-title-row">
-                <h3>PRQC 관계 품질 6요소</h3>
+                <h3>PRQC로 보는 관계의 6가지 요소</h3>
                 <div className="prqc-info">
                   <button type="button" className="pixel-info-btn" tabIndex={-1} aria-label="PRQC 설명 보기">
                     <PixelInfoIcon />
@@ -97,12 +107,6 @@ export default function Scene07Report({
                 <div className="evidence-text">{ev.text}</div>
               </div>
             ))}
-          </div>
-          <div className="consult-cta intro-rise" style={{ '--i': 5 }}>
-            <button className="btn btn-primary intro-consult-glow" type="button" tabIndex={-1}>
-              <ChatIcon />
-              AI와 상담하기
-            </button>
           </div>
         </div>
       </section>

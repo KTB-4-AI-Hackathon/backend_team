@@ -154,6 +154,7 @@ export default function DashboardPage() {
       <img ref={ufoRef} className="dashboard-ufo" src={ufoImage} alt="" aria-hidden="true" />
       <div className="page-head">
         <div className="page-head-copy">
+          <div className="page-eyebrow">YOUR UNIVERSE</div>
           <h1 className="page-title">이번 주 나의 관계 온도</h1>
           <p className="page-tagline">
             <SparkleIcon className="spark" style={{ width: 14, height: 14 }} /> 끝없는 관계의 우주 속, 당신에게

@@ -23,19 +23,19 @@ export default function DemoAppShell({ active, children, cursor = null }) {
             <nav className="nav">
               <span className={`nav-item ${active === 'dashboard' ? 'active' : ''}`}>
                 <DashboardIcon />
-                <span className="nav-label">메인 대시보드</span>
+                <span className="nav-label">홈</span>
               </span>
               <span className={`nav-item ${active === 'report' ? 'active' : ''}`}>
                 <PersonIcon />
-                <span className="nav-label">인물별 관계</span>
+                <span className="nav-label">관계 리포트</span>
               </span>
               <span className={`nav-item ${active === 'chat' ? 'active' : ''}`}>
                 <ChatIcon />
-                <span className="nav-label">AI 챗봇</span>
+                <span className="nav-label">AI 상담</span>
               </span>
               <span className="nav-item">
                 <GuideIcon />
-                <span className="nav-label">사용 가이드</span>
+                <span className="nav-label">가이드</span>
               </span>
             </nav>
             <div className="sidebar-spacer" />

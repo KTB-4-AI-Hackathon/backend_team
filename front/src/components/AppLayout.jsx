@@ -58,21 +58,21 @@ export default function AppLayout() {
         </div>
 
         <nav className="nav">
-          <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="메인 대시보드">
+          <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="홈">
             <DashboardIcon />
-            <span className="nav-label">메인 대시보드</span>
+            <span className="nav-label">홈</span>
           </NavLink>
-          <NavLink to="/report" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="인물별 관계">
+          <NavLink to="/report" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="관계 리포트">
             <PersonIcon />
-            <span className="nav-label">인물별 관계</span>
+            <span className="nav-label">관계 리포트</span>
           </NavLink>
-          <NavLink to="/chat" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="AI 챗봇">
+          <NavLink to="/chat" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="AI 상담">
             <ChatIcon />
-            <span className="nav-label">AI 챗봇</span>
+            <span className="nav-label">AI 상담</span>
           </NavLink>
-          <NavLink to="/guide" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="사용 가이드">
+          <NavLink to="/guide" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="가이드">
             <GuideIcon />
-            <span className="nav-label">사용 가이드</span>
+            <span className="nav-label">가이드</span>
           </NavLink>
         </nav>
 

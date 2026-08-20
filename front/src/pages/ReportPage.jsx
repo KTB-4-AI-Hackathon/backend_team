@@ -201,23 +201,27 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
   return (
     <>
       <div className="report-head">
-        <div className="report-who">
-          {pointImageFor(report.overall.score) ? (
-            <img className="report-avatar point-avatar" src={pointImageFor(report.overall.score)} alt="" />
-          ) : (
-            <div className="report-avatar" style={{ background: avatarGradientFor(report.relationship.id) }}>
-              {report.relationship.initial || initialsOf(report.relationship.name)}
+        <div className="report-head-left">
+          <div className="report-who">
+            <div className="report-identity">
+              <div className="report-eyebrow">RELATIONSHIP REPORT</div>
+              <div className="report-name-row">
+                <div className="report-name">{report.relationship.name}</div>
+                <span className="chip">{RELATIONSHIP_TYPE_LABELS[report.relationship.relationshipType]}</span>
+              </div>
             </div>
-          )}
-          <div>
-            <div className="report-name">{report.relationship.name}</div>
-            <span className="chip">{RELATIONSHIP_TYPE_LABELS[report.relationship.relationshipType]}</span>
           </div>
+          <button className="btn btn-ghost" onClick={onAddData}>
+            <PlusIcon />
+            새 대화 반영하기
+          </button>
         </div>
-        <button className="btn btn-ghost" onClick={onAddData}>
-          <PlusIcon />
-          대화 내역 추가
-        </button>
+        <div className="report-head-right">
+          <button className="btn btn-primary" onClick={onConsult} disabled={consultLoading}>
+            <ChatIcon />
+            {consultLoading ? '연결하는 중...' : '이 관계에 대해 이야기 하기'}
+          </button>
+        </div>
       </div>
 
       <div className="report-grid">
@@ -262,7 +266,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
 
         <div className="card prqc-card">
           <div className="card-title-row">
-            <h3>PRQC 관계 품질 6요소</h3>
+            <h3>PRQC로 보는 관계의 6가지 요소</h3>
             <PrqcInfoTip />
           </div>
           <RadarChart
@@ -349,12 +353,6 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         {report.disclaimer}
       </p>
 
-      <div className="consult-cta">
-        <button className="btn btn-primary" onClick={onConsult} disabled={consultLoading}>
-          <ChatIcon />
-          {consultLoading ? '연결하는 중...' : 'AI와 상담하기'}
-        </button>
-      </div>
     </>
   );
 }
