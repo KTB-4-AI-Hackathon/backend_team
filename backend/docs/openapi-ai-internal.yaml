@@ -84,6 +84,8 @@ paths:
                           answers:
                             - questionCode: RELATIONSHIP_FEELING
                               score: 4
+                            - questionCode: CONVERSATION_COMFORT
+                              score: 5
                         analysis:
                           reportId: 0198c8a7-3000-7000-8000-000000000008
                           analyzedAt: "2026-08-10T01:02:00Z"
@@ -161,6 +163,8 @@ paths:
                           answers:
                             - questionCode: RELATIONSHIP_FEELING
                               score: 4
+                            - questionCode: CONVERSATION_COMFORT
+                              score: 5
                         analysis:
                           reportId: 0198c8a7-3000-7000-8000-000000000008
                           analyzedAt: "2026-08-10T01:02:00Z"
