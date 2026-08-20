@@ -5,7 +5,7 @@ import DemoCursor from '../parts/DemoCursor';
 import TypeText from '../parts/TypeText';
 import { RELATIONSHIP_TYPES } from '../../data/constants';
 
-export default function Scene03Form() {
+export default function Scene03Form({ name = '홍길동', pickType = 'ROMANTIC_PARTNER' }) {
   return (
     <DemoAppShell
       active="dashboard"
@@ -17,7 +17,7 @@ export default function Scene03Form() {
               <div className="modal-sub">등록할 인물의 정보를 알려주세요</div>
               <label className="field-label">이름</label>
               <div className="text-input intro-fake-input" style={{ marginBottom: 8 }}>
-                <TypeText text="홍길동" delay={150} speed={110} />
+                <TypeText text={name} delay={150} speed={110} />
               </div>
               <label className="field-label" style={{ marginTop: 10 }}>
                 관계 유형
@@ -28,7 +28,7 @@ export default function Scene03Form() {
                     key={t.value}
                     type="button"
                     tabIndex={-1}
-                    className={`chip-btn ${t.value === 'ROMANTIC_PARTNER' ? 'intro-pick' : ''}`}
+                    className={`chip-btn ${t.value === pickType ? 'intro-pick' : ''}`}
                   >
                     {t.label}
                   </button>

@@ -1,4 +1,4 @@
-import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon } from '../../components/Icons';
+import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, GuideIcon, ChevronsLeftIcon } from '../../components/Icons';
 import wordmark from '../../assets/images/wouldu-wordmark.png';
 import '../../components/AppLayout.css';
 
@@ -32,6 +32,10 @@ export default function DemoAppShell({ active, children, cursor = null }) {
               <span className={`nav-item ${active === 'chat' ? 'active' : ''}`}>
                 <ChatIcon />
                 <span className="nav-label">AI 챗봇</span>
+              </span>
+              <span className="nav-item">
+                <GuideIcon />
+                <span className="nav-label">사용 가이드</span>
               </span>
             </nav>
             <div className="sidebar-spacer" />

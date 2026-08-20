@@ -7,10 +7,20 @@ import { PRQC_ORDER, PRQC_LABELS } from '../../data/constants';
 import { pointImageFor } from '../../utils/pointImage';
 import '../../pages/Report.css';
 
-const PRQC_VALUES = [78, 74, 80, 76, 70, 82];
-const SCORE = 72;
+const DEFAULT_EVIDENCES = [
+  { tag: '애정', text: "7월 20일 · 26일 · 28일에도 '사랑해', '좋아해' 같은 애정 표현이 이어졌어요." },
+  { tag: '친밀감', text: '상대방이 먼저 연락한 비율이 약 70%였고, 한강 이야기를 자주 나누고 있어요.' },
+];
 
-export default function Scene07Report() {
+export default function Scene07Report({
+  name = '홍길동',
+  typeLabel = '연인',
+  score = 72,
+  delta = '▲ 3',
+  deltaDir = 'up',
+  prqcValues = [78, 74, 80, 76, 70, 82],
+  evidences = DEFAULT_EVIDENCES,
+}) {
   return (
     <DemoAppShell active="report" cursor={<DemoCursor variant="report" />}>
       <section className="report-shell">
@@ -20,20 +30,20 @@ export default function Scene07Report() {
             <input placeholder="인물 검색" readOnly tabIndex={-1} />
           </div>
           <button className="mini-person active" type="button" tabIndex={-1}>
-            <img className="mini-avatar point-avatar" src={pointImageFor(SCORE)} alt="" />
+            <img className="mini-avatar point-avatar" src={pointImageFor(score)} alt="" />
             <div>
-              <div className="mini-name">홍길동</div>
-              <div className="mini-score">{SCORE}점 · 연인</div>
+              <div className="mini-name">{name}</div>
+              <div className="mini-score">{score}점 · {typeLabel}</div>
             </div>
           </button>
         </aside>
         <div className="report-main">
           <div className="report-head intro-rise" style={{ '--i': 0 }}>
             <div className="report-who">
-              <img className="report-avatar point-avatar" src={pointImageFor(SCORE)} alt="" />
+              <img className="report-avatar point-avatar" src={pointImageFor(score)} alt="" />
               <div>
-                <div className="report-name">홍길동</div>
-                <span className="chip">연인</span>
+                <div className="report-name">{name}</div>
+                <span className="chip">{typeLabel}</span>
               </div>
             </div>
             <button className="btn btn-ghost" type="button" tabIndex={-1}>
@@ -45,11 +55,11 @@ export default function Scene07Report() {
             <div className="card overview-card intro-rise" style={{ '--i': 1 }}>
               <h3>종합 온도</h3>
               <div className="gauge-wrap">
-                <Gauge score={SCORE} size={216} />
+                <Gauge score={score} size={216} />
                 <div className="gauge-center">
-                  <div className="gauge-score">{SCORE}</div>
+                  <div className="gauge-score">{score}</div>
                   <div className="gauge-max">/ 100</div>
-                  <div className="gauge-delta score-delta up">▲ 3</div>
+                  <div className={`gauge-delta score-delta ${deltaDir}`}>{delta}</div>
                 </div>
               </div>
               <div className="prqc-mini" aria-label="PRQC 관계 품질 점수">
@@ -58,9 +68,9 @@ export default function Scene07Report() {
                   <div className="prqc-mini-row" key={key}>
                     <span className="prqc-mini-label">{PRQC_LABELS[key]}</span>
                     <div className="prqc-mini-track" aria-hidden="true">
-                      <span className="prqc-mini-fill" style={{ width: `${PRQC_VALUES[index]}%` }} />
+                      <span className="prqc-mini-fill" style={{ width: `${prqcValues[index]}%` }} />
                     </div>
-                    <strong className="prqc-mini-score">{PRQC_VALUES[index]}</strong>
+                    <strong className="prqc-mini-score">{prqcValues[index]}</strong>
                   </div>
                 ))}
               </div>
@@ -74,28 +84,19 @@ export default function Scene07Report() {
                   </button>
                 </div>
               </div>
-              <RadarChart values={PRQC_VALUES} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
+              <RadarChart values={prqcValues} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
             </div>
           </div>
           <div className="evidence-row report-analysis">
-            <div className="evidence-card intro-rise" style={{ '--i': 3 }}>
-              <div className="evidence-top">
-                <QuoteIcon />
-                <span className="evidence-tag">애정</span>
+            {evidences.map((ev, i) => (
+              <div className="evidence-card intro-rise" style={{ '--i': 3 + i }} key={ev.tag}>
+                <div className="evidence-top">
+                  <QuoteIcon />
+                  <span className="evidence-tag">{ev.tag}</span>
+                </div>
+                <div className="evidence-text">{ev.text}</div>
               </div>
-              <div className="evidence-text">
-                7월 20일 · 26일 · 28일에도 ‘사랑해’, ‘좋아해’ 같은 애정 표현이 이어졌어요.
-              </div>
-            </div>
-            <div className="evidence-card intro-rise" style={{ '--i': 4 }}>
-              <div className="evidence-top">
-                <QuoteIcon />
-                <span className="evidence-tag">친밀감</span>
-              </div>
-              <div className="evidence-text">
-                상대방이 먼저 연락한 비율이 약 70%였고, 한강 이야기를 자주 나누고 있어요.
-              </div>
-            </div>
+            ))}
           </div>
           <div className="consult-cta intro-rise" style={{ '--i': 5 }}>
             <button className="btn btn-primary intro-consult-glow" type="button" tabIndex={-1}>

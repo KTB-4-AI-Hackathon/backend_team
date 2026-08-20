@@ -9,7 +9,7 @@ import { CheckIcon } from '../../components/Icons';
 const CIRCUMFERENCE = 2 * Math.PI * 27;
 const STAGES = ['메시지 패턴을 살펴보는 중', '감정 흐름을 파악하는 중', '관계 온도를 측정하는 중'];
 
-export default function Scene06Analysis() {
+export default function Scene06Analysis({ personName = '홍길동' }) {
   const [stage, setStage] = useState(0);
   const [done, setDone] = useState(false);
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function Scene06Analysis() {
                   <CheckIcon strokeWidth="2.4" />
                 </div>
                 <div className="loading-title">분석이 끝났어요</div>
-                <div className="loading-sub">홍길동님과의 관계 온도가 반영됐어요</div>
+                <div className="loading-sub">{personName}님과의 관계 온도가 반영됐어요</div>
                 <button className="btn btn-primary" type="button" tabIndex={-1}>
                   리포트 보기
                 </button>

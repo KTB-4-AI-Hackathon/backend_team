@@ -4,18 +4,24 @@ import DashboardDemo from '../parts/DashboardDemo';
 import DemoModal from '../parts/DemoModal';
 import DemoCursor from '../parts/DemoCursor';
 
-export default function Scene05Checkin() {
-  const [q1, setQ1] = useState(4);
-  const [q2, setQ2] = useState(5);
+const Q1_STEPS_DEFAULT = [[450, 3], [700, 2]];
+const Q2_STEPS_DEFAULT = [[1050, 4], [1350, 3]];
+
+export default function Scene05Checkin({
+  q1Init = 4,
+  q2Init = 5,
+  q1Steps = Q1_STEPS_DEFAULT,
+  q2Steps = Q2_STEPS_DEFAULT,
+}) {
+  const [q1, setQ1] = useState(q1Init);
+  const [q2, setQ2] = useState(q2Init);
   useEffect(() => {
     const timers = [
-      setTimeout(() => setQ1(3), 450),
-      setTimeout(() => setQ1(2), 700),
-      setTimeout(() => setQ2(4), 1050),
-      setTimeout(() => setQ2(3), 1350),
+      ...q1Steps.map(([t, v]) => setTimeout(() => setQ1(v), t)),
+      ...q2Steps.map(([t, v]) => setTimeout(() => setQ2(v), t)),
     ];
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [q1Steps, q2Steps]);
   return (
     <DemoAppShell
       active="dashboard"

@@ -4,7 +4,7 @@ import DemoModal from '../parts/DemoModal';
 import DemoCursor from '../parts/DemoCursor';
 import { UploadIcon, CheckIcon } from '../../components/Icons';
 
-export default function Scene04Upload() {
+export default function Scene04Upload({ fileName = '홍길동_대화.txt' }) {
   return (
     <DemoAppShell
       active="dashboard"
@@ -25,13 +25,13 @@ export default function Scene04Upload() {
               <div className="file-done intro-file-done">
                 <CheckIcon />
                 <div>
-                  <div className="file-done-name">홍길동_대화.txt</div>
+                  <div className="file-done-name">{fileName}</div>
                   <div className="file-done-size">184KB</div>
                 </div>
               </div>
             </div>
           </DemoModal>
-          <div className="intro-file-fly">📄 홍길동_대화.txt</div>
+          <div className="intro-file-fly">📄 {fileName}</div>
           <DemoCursor variant="upload" />
         </>
       }

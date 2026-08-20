@@ -33,6 +33,8 @@ const SCENES = [
 
 // 개발용: /intro?scene=<id> 로 특정 장면을 고정해 미세 조정할 수 있다.
 const HOLD_ID = new URLSearchParams(window.location.search).get('scene');
+// 시연·녹화용: /intro?force=1 은 로그인 상태여도 인트로를 재생한다.
+const FORCE = new URLSearchParams(window.location.search).get('force') != null;
 
 export default function IntroPage() {
   const navigate = useNavigate();
@@ -55,7 +57,7 @@ export default function IntroPage() {
   }, [navigate]);
 
   useEffect(() => {
-    if (isLoggedIn) navigate('/dashboard', { replace: true });
+    if (isLoggedIn && !FORCE && !HOLD_ID) navigate('/dashboard', { replace: true });
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
