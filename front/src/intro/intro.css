@@ -147,6 +147,139 @@
   left: 0;
 }
 
+/* ===== Scene 1: 로그인 ===== */
+.s1-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 0 40px;
+}
+.s1-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+}
+.s1-copy {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.kakao-demo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  background: #fee500;
+  color: #191600;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 11px 22px;
+}
+.kakao-demo-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.s1-astro {
+  position: absolute;
+  left: 34px;
+  bottom: 18px;
+  animation: s1AstroUp 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+@keyframes s1AstroUp {
+  from {
+    opacity: 0;
+    transform: translateY(46px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.cursor-login {
+  animation: cursorLogin 1s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+@keyframes cursorLogin {
+  0% {
+    transform: translate(180px, 250px);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  70% {
+    transform: translate(358px, 141px) scale(1);
+  }
+  78% {
+    transform: translate(358px, 141px) scale(0.72);
+  }
+  88%,
+  100% {
+    transform: translate(358px, 141px) scale(1);
+  }
+}
+
+/* ===== Scene 2: 대시보드 ===== */
+.mini-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.mini-sub {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 8px;
+}
+.s2-dim {
+  animation: s2Dim 1s ease both;
+  padding-bottom: 60px;
+}
+@keyframes s2Dim {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+.s2-add {
+  position: absolute;
+  right: 30px;
+  bottom: 26px;
+  animation: s2Glow 1s ease both;
+}
+@keyframes s2Glow {
+  0%,
+  55% {
+    box-shadow: var(--shadow-pink);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 6px rgba(226, 160, 201, 0.25), var(--shadow-pink);
+  }
+}
+.cursor-dashboard {
+  animation: cursorDashboard 1s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+@keyframes cursorDashboard {
+  0% {
+    transform: translate(358px, 141px);
+  }
+  62% {
+    transform: translate(645px, 262px) scale(1);
+  }
+  74% {
+    transform: translate(645px, 262px) scale(0.72);
+  }
+  86%,
+  100% {
+    transform: translate(645px, 262px) scale(1);
+  }
+}
+
 .type-caret {
   display: inline-block;
   width: 2px;

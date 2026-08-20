@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import Starfield from '../components/Starfield';
 import { LogoMark } from '../components/Icons';
 import StageStack from './parts/StageStack';
+import Scene01Login from './scenes/Scene01Login';
+import Scene02Dashboard from './scenes/Scene02Dashboard';
 import './intro.css';
 
 export const INTRO_PLAYED_KEY = 'introPlayed';
@@ -11,8 +13,8 @@ export const INTRO_PLAYED_KEY = 'introPlayed';
 const Ph = ({ label }) => <div className="intro-ph">{label}</div>;
 
 const SCENES = [
-  { id: 'login', dur: 1000, stage: null, Comp: () => <Ph label="login" /> },
-  { id: 'dashboard', dur: 1000, stage: null, Comp: () => <Ph label="dashboard" /> },
+  { id: 'login', dur: 1000, stage: null, Comp: Scene01Login },
+  { id: 'dashboard', dur: 1000, stage: null, Comp: Scene02Dashboard },
   { id: 'form', dur: 1200, stage: '인물 등록', Comp: () => <Ph label="form" /> },
   { id: 'upload', dur: 1300, stage: '대화 업로드', Comp: () => <Ph label="upload" /> },
   { id: 'checkin', dur: 800, stage: '체크인', Comp: () => <Ph label="checkin" /> },
@@ -23,10 +25,16 @@ const SCENES = [
   { id: 'logo', dur: 1500, stage: null, Comp: () => <Ph label="logo" /> },
 ];
 
+// 개발용: /intro?scene=<id> 로 특정 장면을 고정해 미세 조정할 수 있다.
+const HOLD_ID = new URLSearchParams(window.location.search).get('scene');
+
 export default function IntroPage() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => {
+    const i = SCENES.findIndex((s) => s.id === HOLD_ID);
+    return i >= 0 ? i : 0;
+  });
   const isStatic = useMemo(
     () =>
       (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ||
@@ -51,6 +59,7 @@ export default function IntroPage() {
   }, [finish]);
 
   useEffect(() => {
+    if (HOLD_ID) return;
     if (isStatic) {
       const t = setTimeout(finish, 1600);
       return () => clearTimeout(t);
