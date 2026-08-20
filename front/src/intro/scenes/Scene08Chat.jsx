@@ -1,22 +1,84 @@
-import DemoFrame from '../parts/DemoFrame';
+import DemoAppShell from '../parts/DemoAppShell';
 import TypeText from '../parts/TypeText';
+import { MiniAstronaut } from '../../components/Astronaut';
+import { SendIcon } from '../../components/Icons';
+import { avatarGradientFor } from '../../utils/avatar';
+import '../../pages/Chat.css';
+
+const SUGGESTED_QUESTIONS = ['요즘 좀 나아진 것 같아', '이 관계 계속 유지해도 될까?'];
 
 export default function Scene08Chat() {
   return (
-    <DemoFrame title="AI 상담">
-      <div className="chat-col">
-        <div className="bubble me s8-user">
-          <TypeText text="요즘 권태기인 것 같아.. 대화 분석 결과는 어때?" delay={80} speed={32} />
+    <DemoAppShell active="chat">
+      <section className="chat-shell">
+        <aside className="rooms-panel">
+          <div className="rooms-panel-title">상담 기록</div>
+          <button className="room-item active" type="button" tabIndex={-1}>
+            <div className="room-avatar" style={{ background: avatarGradientFor('demo') }}>
+              홍
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="room-name-row">
+                <span className="room-name">홍길동</span>
+                <span className="room-time">방금</span>
+              </div>
+              <div className="room-preview">대화 분석 기반 상담</div>
+            </div>
+          </button>
+        </aside>
+        <div className="chat-main">
+          <div className="chat-header">
+            <h2>홍길동님과의 상담</h2>
+            <p>홍길동님과의 대화 데이터 기반 상담</p>
+          </div>
+          <div className="chat-scroll">
+            <div className="chat-col">
+              <div className="bubble-row user">
+                <div className="bubble">
+                  <TypeText text="요즘 권태기인 것 같아.. 대화 분석 결과는 어때?" delay={100} speed={30} />
+                </div>
+              </div>
+              <div className="bubble-row ai intro-ai-think">
+                <div className="bubble-avatar">
+                  <MiniAstronaut />
+                </div>
+                <div className="bubble">생각을 정리하고 있어요...</div>
+              </div>
+              <div className="bubble-row ai intro-ai-answer">
+                <div className="bubble-avatar">
+                  <MiniAstronaut />
+                </div>
+                <div className="bubble">
+                  연인과의 관계가 예전 같지 않아 많이 속상하셨겠어요.
+                  <br />
+                  최근 대화를 분석해보면 7월 20일 · 26일 · 28일에도{' '}
+                  <span className="intro-accent">‘사랑해’, ‘좋아해’</span> 같은 애정 표현이
+                  이어졌고, 상대방이 먼저 연락한 비율도 약{' '}
+                  <span className="intro-accent">70%</span>로 높아요. 또 두 분이{' '}
+                  <span className="intro-accent">한강 이야기</span>를 자주 나누고 있어요.
+                  <br />
+                  <span className="intro-hi">먼저 한강 데이트를 제안해보는 건 어떨까요?</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="chat-input-area">
+            <div className="chip-suggest-row">
+              {SUGGESTED_QUESTIONS.map((q) => (
+                <button key={q} className="suggest-chip" type="button" tabIndex={-1}>
+                  {q}
+                </button>
+              ))}
+            </div>
+            <div className="chat-input-row">
+              <input placeholder="궁금한 점을 편하게 물어보세요" readOnly tabIndex={-1} />
+              <button className="send-btn" type="button" tabIndex={-1} aria-label="전송">
+                <SendIcon />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="bubble ai s8-think">···</div>
-        <div className="bubble ai s8-answer">
-          연인과의 관계가 예전 같지 않아 많이 속상하셨겠어요.
-          <br />
-          최근 대화에서도 <b>‘사랑해’, ‘좋아해’</b> 같은 애정 표현이 이어졌고, 상대방이 먼저 연락한
-          비율도 약 <b>70%</b>로 높아요. 두 분은 <b>한강</b> 이야기를 자주 나누고 있어요.
-          <span className="s8-hi">먼저 한강 데이트를 제안해보는 건 어떨까요?</span>
-        </div>
-      </div>
-    </DemoFrame>
+      </section>
+    </DemoAppShell>
   );
 }

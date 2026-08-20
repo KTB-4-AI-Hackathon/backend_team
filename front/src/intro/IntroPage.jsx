@@ -19,15 +19,15 @@ import './intro.css';
 export const INTRO_PLAYED_KEY = 'introPlayed';
 
 const SCENES = [
-  { id: 'login', dur: 1000, stage: null, Comp: Scene01Login },
-  { id: 'dashboard', dur: 1000, stage: null, Comp: Scene02Dashboard },
-  { id: 'form', dur: 1200, stage: '인물 등록', Comp: Scene03Form },
-  { id: 'upload', dur: 1300, stage: '대화 업로드', Comp: Scene04Upload },
-  { id: 'checkin', dur: 800, stage: '체크인', Comp: Scene05Checkin },
-  { id: 'analysis', dur: 1200, stage: 'AI 분석', Comp: Scene06Analysis },
-  { id: 'report', dur: 900, stage: '리포트', Comp: Scene07Report },
-  { id: 'chat', dur: 2100, stage: 'AI 상담', Comp: Scene08Chat },
-  { id: 'kakao', dur: 2000, stage: '실제 대화', Comp: Scene09Kakao },
+  { id: 'login', dur: 900, stage: null, Comp: Scene01Login },
+  { id: 'dashboard', dur: 900, stage: null, Comp: Scene02Dashboard },
+  { id: 'form', dur: 1100, stage: '인물 등록', Comp: Scene03Form },
+  { id: 'upload', dur: 1200, stage: '대화 업로드', Comp: Scene04Upload },
+  { id: 'checkin', dur: 900, stage: '체크인', Comp: Scene05Checkin },
+  { id: 'analysis', dur: 1500, stage: 'AI 분석', Comp: Scene06Analysis },
+  { id: 'report', dur: 1200, stage: '리포트', Comp: Scene07Report },
+  { id: 'chat', dur: 2000, stage: 'AI 상담', Comp: Scene08Chat },
+  { id: 'kakao', dur: 1900, stage: '실제 대화', Comp: Scene09Kakao },
   { id: 'logo', dur: 1500, stage: null, Comp: Scene10Logo },
 ];
 

@@ -1,29 +1,46 @@
-import DemoFrame from '../parts/DemoFrame';
+import DemoAppShell from '../parts/DemoAppShell';
+import DashboardDemo from '../parts/DashboardDemo';
+import DemoModal from '../parts/DemoModal';
 import DemoCursor from '../parts/DemoCursor';
 import TypeText from '../parts/TypeText';
+import { RELATIONSHIP_TYPES } from '../../data/constants';
 
 export default function Scene03Form() {
   return (
-    <DemoFrame title="새 인물 등록">
-      <div className="s3-field">
-        <label>이름</label>
-        <div className="s3-input">
-          <TypeText text="홍길동" delay={100} speed={90} />
-        </div>
-      </div>
-      <div className="s3-field">
-        <label>관계</label>
-        <div className="s3-rels">
-          <span>친구</span>
-          <span>가족</span>
-          <span className="picked">연인</span>
-          <span>기타</span>
-        </div>
-      </div>
-      <button className="btn btn-primary s3-next" type="button">
-        다음
-      </button>
-      <DemoCursor variant="form" />
-    </DemoFrame>
+    <DemoAppShell
+      active="dashboard"
+      cursor={
+        <>
+          <DemoModal step={1}>
+            <div>
+              <div className="modal-title">어떤 관계인가요?</div>
+              <div className="modal-sub">등록할 인물의 정보를 알려주세요</div>
+              <label className="field-label">이름</label>
+              <div className="text-input intro-fake-input" style={{ marginBottom: 8 }}>
+                <TypeText text="홍길동" delay={150} speed={110} />
+              </div>
+              <label className="field-label" style={{ marginTop: 10 }}>
+                관계 유형
+              </label>
+              <div className="chip-row">
+                {RELATIONSHIP_TYPES.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    tabIndex={-1}
+                    className={`chip-btn ${t.value === 'ROMANTIC_PARTNER' ? 'intro-pick' : ''}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </DemoModal>
+          <DemoCursor variant="form" />
+        </>
+      }
+    >
+      <DashboardDemo />
+    </DemoAppShell>
   );
 }

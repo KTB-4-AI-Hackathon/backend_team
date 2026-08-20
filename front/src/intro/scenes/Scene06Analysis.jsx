@@ -1,42 +1,67 @@
 import { useEffect, useState } from 'react';
-import DemoFrame from '../parts/DemoFrame';
+import DemoAppShell from '../parts/DemoAppShell';
+import DashboardDemo from '../parts/DashboardDemo';
+import DemoModal from '../parts/DemoModal';
+import DemoCursor from '../parts/DemoCursor';
 import Astronaut from '../../components/Astronaut';
+import { CheckIcon } from '../../components/Icons';
 
-const MSGS = [
-  '대화 패턴을 확인하고 있어요',
-  '감정 표현을 분석하고 있어요',
-  '두 사람의 관계를 분석했어요 ✓',
-];
+const CIRCUMFERENCE = 2 * Math.PI * 27;
+const STAGES = ['메시지 패턴을 살펴보는 중', '감정 흐름을 파악하는 중', '관계 온도를 측정하는 중'];
 
 export default function Scene06Analysis() {
-  const [m, setM] = useState(0);
+  const [stage, setStage] = useState(0);
+  const [done, setDone] = useState(false);
   useEffect(() => {
-    const t1 = setTimeout(() => setM(1), 400);
-    const t2 = setTimeout(() => setM(2), 800);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const timers = [
+      setTimeout(() => setStage(1), 350),
+      setTimeout(() => setStage(2), 700),
+      setTimeout(() => setDone(true), 1000),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, []);
   return (
-    <DemoFrame title="AI 분석">
-      <div className="s6-center">
-        <div className="s6-orbit">
-          <i />
-          <i />
-          <i />
-          <Astronaut size={64} />
-        </div>
-        <p className="s6-msg" key={m}>
-          {MSGS[m]}
-        </p>
-        <div className="s6-bar">
-          <i />
-        </div>
-        <button className="btn btn-primary s6-report" type="button">
-          리포트 보기
-        </button>
-      </div>
-    </DemoFrame>
+    <DemoAppShell
+      active="dashboard"
+      cursor={
+        <>
+          <DemoModal step={null}>
+            {!done ? (
+              <div className="loading-state">
+                <div className="loading-astro">
+                  <Astronaut size={76} />
+                </div>
+                <div className="loading-title">대화를 분석하고 있어요</div>
+                <div className="loading-sub">{STAGES[stage]}</div>
+                <svg className="progress-ring" viewBox="0 0 64 64">
+                  <circle className="progress-track" cx="32" cy="32" r="27" />
+                  <circle
+                    className="progress-bar intro-progress"
+                    cx="32"
+                    cy="32"
+                    r="27"
+                    strokeDasharray={CIRCUMFERENCE.toFixed(1)}
+                  />
+                </svg>
+              </div>
+            ) : (
+              <div className="success-state">
+                <div className="success-badge">
+                  <CheckIcon strokeWidth="2.4" />
+                </div>
+                <div className="loading-title">분석이 끝났어요</div>
+                <div className="loading-sub">홍길동님과의 관계 온도가 반영됐어요</div>
+                <button className="btn btn-primary" type="button" tabIndex={-1}>
+                  리포트 보기
+                </button>
+              </div>
+            )}
+          </DemoModal>
+          {done && <DemoCursor variant="analysis" />}
+        </>
+      }
+    >
+      <DashboardDemo />
+    </DemoAppShell>
   );
 }
