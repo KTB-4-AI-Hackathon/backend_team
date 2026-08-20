@@ -140,13 +140,20 @@ export function KakaoIcon(props) {
 }
 
 export function LogoMark({ size = 34 }) {
+  const displaySize = Math.round(size * 2.25);
+
   return (
     <img
       src={logoImage}
       alt=""
-      width={size}
-      height={size}
-      style={{ display: 'block', flex: 'none' }}
+      width={displaySize}
+      height={displaySize}
+      style={{
+        display: 'block',
+        flex: 'none',
+        aspectRatio: '1 / 1',
+        objectFit: 'contain',
+      }}
     />
   );
 }
