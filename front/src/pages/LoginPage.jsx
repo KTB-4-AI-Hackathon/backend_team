@@ -5,6 +5,7 @@ import { hasIntroPlayed } from '../intro/IntroPage';
 import { LogoMark, KakaoIcon, SparkleIcon, CheckIcon, ChatIcon } from '../components/Icons';
 import Moon from '../components/Moon';
 import Astronaut from '../components/Astronaut';
+import wordmark from '../assets/images/wouldu-wordmark.png';
 import './Auth.css';
 
 export default function LoginPage() {
@@ -51,7 +52,7 @@ export default function LoginPage() {
 
         <div className="auth-logo">
           <LogoMark size={38} />
-          <span className="auth-logo-name">관계온도</span>
+          <img className="auth-logo-name-img" src={wordmark} alt="WouldU" />
         </div>
 
         <h1 className="auth-catch">

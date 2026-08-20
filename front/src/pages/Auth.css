@@ -378,3 +378,42 @@
 .consent-cta {
   margin-top: 26px;
 }
+
+/* ===== Mobile (phone) layout — desktop above 768px is untouched ===== */
+@media (max-width: 768px) {
+  .auth-shell {
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  .auth-hero {
+    flex: none;
+    justify-content: flex-start;
+    padding: 36px 24px 40px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .auth-hero-deco {
+    display: none;
+  }
+  .auth-catch {
+    font-size: 22px;
+    margin: 20px 0 14px;
+  }
+  .auth-panel {
+    flex: none;
+    padding: 40px 20px 56px;
+  }
+  .consent-shell {
+    padding: 28px 14px 40px;
+  }
+  .consent-card {
+    padding: 26px 20px 24px;
+  }
+}
+
+.auth-logo-name-img {
+  display: block;
+  height: 17px;
+  width: auto;
+  image-rendering: pixelated;
+}

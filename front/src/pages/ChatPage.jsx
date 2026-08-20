@@ -70,7 +70,7 @@ function ChatRoom({ consultationId, rooms }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
-  const [resourcesByMessage, setResourcesByMessage] = useState({});
+  const [resourceModal, setResourceModal] = useState(null);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
   const sourceRef = useRef(null);
@@ -137,19 +137,16 @@ function ChatRoom({ consultationId, rooms }) {
     }
   }
 
-  async function toggleResources(messageId) {
-    setResourcesByMessage((prev) => {
-      const current = prev[messageId];
-      if (current) return { ...prev, [messageId]: { ...current, show: !current.show } };
-      return prev;
-    });
-    if (resourcesByMessage[messageId]) return;
-    setResourcesByMessage((prev) => ({ ...prev, [messageId]: { show: true, loading: true, items: [] } }));
+  async function openResourceModal(safetyNotice) {
+    const category = safetyNotice.resourceQuery?.category
+      || (safetyNotice.type === 'CRISIS_SUPPORT' ? 'CRISIS_SUPPORT' : 'MENTAL_HEALTH_COUNSELING');
+    const region = safetyNotice.resourceQuery?.region || 'KR';
+    setResourceModal({ title: safetyNotice.title || '상담 지원 안내', category, region, loading: true, items: [] });
     try {
-      const items = await fetchSupportResources();
-      setResourcesByMessage((prev) => ({ ...prev, [messageId]: { show: true, loading: false, items } }));
+      const items = await fetchSupportResources({ region, category });
+      setResourceModal((prev) => (prev ? { ...prev, loading: false, items } : prev));
     } catch {
-      setResourcesByMessage((prev) => ({ ...prev, [messageId]: { show: true, loading: false, items: [] } }));
+      setResourceModal((prev) => (prev ? { ...prev, loading: false, items: [] } : prev));
     }
   }
 
@@ -168,8 +165,7 @@ function ChatRoom({ consultationId, rooms }) {
               <MessageBlock
                 key={m.id}
                 message={m}
-                resources={resourcesByMessage[m.id]}
-                onToggleResources={() => toggleResources(m.id)}
+                onOpenResources={() => openResourceModal(m.safetyNotice)}
               />
             ))}
         </div>
@@ -197,11 +193,14 @@ function ChatRoom({ consultationId, rooms }) {
           </button>
         </div>
       </div>
+      {resourceModal && (
+        <SupportResourceModal resource={resourceModal} onClose={() => setResourceModal(null)} />
+      )}
     </div>
   );
 }
 
-function MessageBlock({ message, resources, onToggleResources }) {
+function MessageBlock({ message, onOpenResources }) {
   const isUser = message.role === 'USER';
   return (
     <>
@@ -223,24 +222,55 @@ function MessageBlock({ message, resources, onToggleResources }) {
             <span className="risk-card-title">{message.safetyNotice.title || '변화 감지'}</span>
           </div>
           <div className="risk-card-text">{message.safetyNotice.message}</div>
-          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '8px 14px' }} onClick={onToggleResources}>
-            상담 리소스 보기
+          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '8px 14px' }} onClick={onOpenResources}>
+            상담센터·지원기관 보기
           </button>
-          {resources?.show && (
-            <div className="risk-resources">
-              {resources.loading && '불러오는 중이에요...'}
-              {!resources.loading && resources.items.length === 0 && '표시할 리소스가 없어요.'}
-              {!resources.loading &&
-                resources.items.map((r) => (
-                  <div key={r.id}>
-                    · {r.name}{r.phone ? ` · ${r.phone}` : ''}{r.url ? ` · ${r.url}` : ''}
-                  </div>
-                ))}
-            </div>
-          )}
         </div>
       )}
     </>
+  );
+}
+
+function SupportResourceModal({ resource, onClose }) {
+  return (
+    <div className="support-modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="support-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="support-modal-title"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="support-modal-head">
+          <div>
+            <div className="support-modal-kicker">도움이 필요할 때</div>
+            <h3 id="support-modal-title">{resource.title}</h3>
+          </div>
+          <button className="support-modal-close" aria-label="닫기" onClick={onClose}>×</button>
+        </div>
+        <p className="support-modal-description">혼자 감당하지 않아도 괜찮아요. 아래 기관에 바로 문의할 수 있어요.</p>
+        {resource.loading && <p className="support-modal-empty">상담센터 정보를 불러오는 중이에요...</p>}
+        {!resource.loading && resource.items.length === 0 && (
+          <p className="support-modal-empty">현재 등록된 상담센터 정보가 없어요.</p>
+        )}
+        {!resource.loading && resource.items.length > 0 && (
+          <div className="support-resource-list">
+            {resource.items.map((item) => (
+              <article className="support-resource-item" key={item.id}>
+                <div className="support-resource-name">{item.name}</div>
+                <div className="support-resource-description">{item.description}</div>
+                <div className="support-resource-meta">
+                  {item.phone && <a href={`tel:${item.phone}`}>전화 {item.phone}</a>}
+                  {item.hours && <span>운영시간 {item.hours}</span>}
+                </div>
+                {item.url && <a className="support-resource-link" href={item.url} target="_blank" rel="noreferrer">공식 홈페이지 열기</a>}
+              </article>
+            ))}
+          </div>
+        )}
+        <button className="btn btn-primary support-modal-footer" onClick={onClose}>확인</button>
+      </section>
+    </div>
   );
 }
 

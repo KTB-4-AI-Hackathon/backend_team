@@ -1,7 +1,62 @@
 .view {
+  position: relative;
+  isolation: isolate;
   padding: 38px 46px 60px;
   max-width: 1200px;
   margin: 0 auto;
+}
+.dashboard-ufo {
+  position: absolute;
+  z-index: 0;
+  top: 300px;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  opacity: 1;
+  pointer-events: none;
+  will-change: transform;
+  transform-origin: center;
+  animation: ufo-cruise 62s ease-in-out infinite;
+}
+.page-head,
+.dash-grid {
+  position: relative;
+  z-index: 1;
+}
+@keyframes ufo-cruise {
+  0% {
+    transform: translate3d(42vw, -110px, 0) rotate(-11deg) scale(0.42);
+  }
+  12% {
+    transform: translate3d(25vw, -210px, 0) rotate(7deg) scale(0.58);
+  }
+  26% {
+    transform: translate3d(-4vw, -130px, 0) rotate(-4deg) scale(1.02);
+  }
+  39% {
+    transform: translate3d(-38vw, 20px, 0) rotate(10deg) scale(0.5);
+  }
+  53% {
+    transform: translate3d(-19vw, 185px, 0) rotate(-7deg) scale(0.65);
+  }
+  67% {
+    transform: translate3d(16vw, 245px, 0) rotate(5deg) scale(0.38);
+  }
+  81% {
+    transform: translate3d(38vw, 95px, 0) rotate(-8deg) scale(1.05);
+  }
+  92% {
+    transform: translate3d(19vw, -40px, 0) rotate(4deg) scale(0.54);
+  }
+  100% {
+    transform: translate3d(42vw, -110px, 0) rotate(-11deg) scale(0.42);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-ufo {
+    animation: none;
+  }
 }
 
 .page-head {
@@ -11,11 +66,15 @@
   align-items: flex-start;
   gap: 24px;
   margin-bottom: 26px;
-  padding-top: 58px;
+  /* Reserve a dedicated flight path for the decorative objects above the controls. */
+  padding-top: 76px;
   padding-bottom: 22px;
-  overflow: hidden;
 }
 .page-head-copy {
+  position: relative;
+  z-index: 2;
+}
+.page-head > .btn {
   position: relative;
   z-index: 2;
 }
@@ -40,20 +99,21 @@
   position: absolute;
   top: 0;
   right: 0;
-  z-index: 1;
+  z-index: 0;
   width: 230px;
-  height: 52px;
+  height: 68px;
   pointer-events: none;
 }
 .hero-deco .moon-slot {
   position: absolute;
-  top: 10px;
-  right: 16px;
+  top: 11px;
+  right: 12px;
   transform: scale(0.72);
 }
 .hero-deco .astro-slot {
   position: absolute;
-  top: -2px;
+  /* The floating animation rises by 9px, so keep the artwork inside its safe area. */
+  top: 12px;
   right: 88px;
   animation: float 5.2s ease-in-out infinite 0.4s;
 }
@@ -122,15 +182,98 @@
   font-size: 14.5px;
   font-weight: 800;
 }
-.sort-select {
-  background: var(--surface-solid);
-  color: var(--text-secondary);
+.sort-menu {
+  position: relative;
+  z-index: 5;
+}
+.sort-trigger {
+  min-width: 142px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 11px 9px 13px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 7px 10px;
+  background: var(--surface-solid);
+  color: var(--text-secondary);
+  font: inherit;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sort-trigger:hover,
+.sort-trigger[aria-expanded='true'] {
+  border-color: rgba(226, 160, 201, 0.48);
+  background: rgba(52, 43, 103, 0.95);
+  box-shadow: 0 8px 22px -12px rgba(226, 160, 201, 0.72);
+}
+.sort-trigger-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--accent-lavender);
+  transition: transform 0.16s ease;
+}
+.sort-trigger[aria-expanded='true'] .sort-trigger-icon {
+  transform: rotate(180deg);
+}
+.sort-options {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  width: max-content;
+  min-width: 100%;
+  overflow: hidden;
+  padding: 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #211b50;
+  box-shadow: 0 18px 38px -12px rgba(4, 2, 20, 0.78);
+  animation: sort-menu-in 0.16s ease-out both;
+}
+.sort-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 8px 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sort-option:hover,
+.sort-option:focus-visible {
+  background: rgba(165, 149, 232, 0.16);
+  color: var(--text-primary);
+  outline: none;
+}
+.sort-option.selected {
+  color: var(--accent-pink);
+}
+.sort-option svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-pink);
+}
+
+@keyframes sort-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .person-grid {
@@ -280,4 +423,44 @@
   margin-top: 6px;
   font-size: 11.5px;
   color: var(--text-muted);
+}
+
+/* ===== Mobile (phone) layout — desktop above 768px is untouched ===== */
+@media (max-width: 768px) {
+  .view {
+    padding: 22px 16px 44px;
+  }
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding-top: 68px;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+  .page-title {
+    font-size: 21px;
+  }
+  .hero-deco {
+    width: 190px;
+    height: 60px;
+  }
+  .hero-deco .moon-slot {
+    transform: scale(0.6);
+  }
+  .hero-deco .astro-slot {
+    right: 72px;
+    transform: scale(0.85);
+  }
+  .dash-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .person-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .demo-toggle {
+    margin: -4px 0 14px;
+  }
 }

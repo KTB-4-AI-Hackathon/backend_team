@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { listRelationships, getRelationship } from '../api/relationships';
 import { fetchReport } from '../api/reports';
 import { createConsultation } from '../api/consultations';
 import { avatarGradientFor, initialsOf } from '../utils/avatar';
+import { pointImageFor } from '../utils/pointImage';
 import { PRQC_ORDER, PRQC_LABELS, RELATIONSHIP_TYPE_LABELS, RELATIONSHIP_STATUS_LABELS } from '../data/constants';
 import Gauge from '../components/charts/Gauge';
 import RadarChart from '../components/charts/RadarChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
 import Astronaut from '../components/Astronaut';
 import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal';
-import { SearchIcon, PlusIcon, QuoteIcon, ChatIcon } from '../components/Icons';
+import { SearchIcon, PlusIcon, QuoteIcon, ChatIcon, PixelInfoIcon } from '../components/Icons';
 import './Report.css';
 
 export default function ReportPage() {
@@ -95,9 +96,13 @@ export default function ReportPage() {
             className={`mini-person ${p.id === id ? 'active' : ''}`}
             onClick={() => navigate(`/report/${p.id}`)}
           >
-            <div className="mini-avatar" style={{ background: avatarGradientFor(p.id) }}>
-              {p.initial || initialsOf(p.name)}
-            </div>
+            {pointImageFor(p.score) ? (
+              <img className="mini-avatar point-avatar" src={pointImageFor(p.score)} alt="" />
+            ) : (
+              <div className="mini-avatar" style={{ background: avatarGradientFor(p.id) }}>
+                {p.initial || initialsOf(p.name)}
+              </div>
+            )}
             <div>
               <div className="mini-name">{p.name}</div>
               <div className="mini-score">
@@ -146,18 +151,64 @@ export default function ReportPage() {
   );
 }
 
+function PrqcInfoTip() {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleOutside(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    window.addEventListener('mousedown', handleOutside);
+    return () => window.removeEventListener('mousedown', handleOutside);
+  }, [open]);
+
+  return (
+    <div className="prqc-info" ref={wrapRef}>
+      <button
+        type="button"
+        className={`pixel-info-btn${open ? ' is-open' : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="PRQC 설명 보기"
+      >
+        <PixelInfoIcon />
+      </button>
+      {open && (
+        <div className="pixel-tooltip" role="note">
+          PRQC는 만족·헌신·친밀·신뢰·열정·사랑 6가지 요소로 관계의 질을 측정하는 지표예요 :{' '}
+          <a
+            className="pixel-tooltip-link"
+            href="https://journals.sagepub.com/doi/10.1177/0146167200265007"
+            target="_blank"
+            rel="noreferrer"
+          >
+            링크 ↗
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReportBody({ report, onAddData, onConsult, consultLoading }) {
   const up = (report.overall.change ?? 0) >= 0;
   const prqcValues = PRQC_ORDER.map((k) => report.prqc[k]);
   const hasTrend = report.trend.length >= 2;
+  const [activePrqcIndex, setActivePrqcIndex] = useState(null);
 
   return (
     <>
       <div className="report-head">
         <div className="report-who">
-          <div className="report-avatar" style={{ background: avatarGradientFor(report.relationship.id) }}>
-            {report.relationship.initial || initialsOf(report.relationship.name)}
-          </div>
+          {pointImageFor(report.overall.score) ? (
+            <img className="report-avatar point-avatar" src={pointImageFor(report.overall.score)} alt="" />
+          ) : (
+            <div className="report-avatar" style={{ background: avatarGradientFor(report.relationship.id) }}>
+              {report.relationship.initial || initialsOf(report.relationship.name)}
+            </div>
+          )}
           <div>
             <div className="report-name">{report.relationship.name}</div>
             <span className="chip">{RELATIONSHIP_TYPE_LABELS[report.relationship.relationshipType]}</span>
@@ -170,12 +221,12 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
 
       <div className="report-grid">
-        <div className="card">
+        <div className="card overview-card">
           <h3>종합 온도</h3>
           <div className="gauge-wrap">
-            <Gauge score={report.overall.score} />
+            <Gauge score={report.overall.score} size={216} />
             <div className="gauge-center">
-              <div className="gauge-score">{report.overall.score}</div>
+              <AnimatedScore score={report.overall.score} />
               <div className="gauge-max">/ 100</div>
               {report.overall.change != null && (
                 <div className={`gauge-delta score-delta ${up ? 'up' : 'down'}`}>
@@ -184,14 +235,42 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
               )}
             </div>
           </div>
-          <div className="spark-block">
-            <div className="spark-block-label">{report.overall.statusLabel}</div>
+          <div className={`prqc-mini${activePrqcIndex !== null ? ' has-active' : ''}`} aria-label="PRQC 관계 품질 점수">
+            <div className="prqc-mini-title">PRQC 관계 품질</div>
+            {PRQC_ORDER.map((key, index) => {
+              const score = Math.max(0, Math.min(100, Math.round(report.prqc[key] ?? 0)));
+              return (
+                <div
+                  className={`prqc-mini-row${activePrqcIndex === index ? ' is-active' : ''}`}
+                  key={key}
+                  tabIndex="0"
+                  onMouseEnter={() => setActivePrqcIndex(index)}
+                  onMouseLeave={() => setActivePrqcIndex(null)}
+                  onFocus={() => setActivePrqcIndex(index)}
+                  onBlur={() => setActivePrqcIndex(null)}
+                >
+                  <span className="prqc-mini-label">{PRQC_LABELS[key]}</span>
+                  <div className="prqc-mini-track" aria-hidden="true">
+                    <span className="prqc-mini-fill" style={{ width: `${score}%` }} />
+                  </div>
+                  <strong className="prqc-mini-score">{score}</strong>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="card">
-          <h3>PRQC 관계 품질 6요소</h3>
-          <RadarChart values={prqcValues} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
+        <div className="card prqc-card">
+          <div className="card-title-row">
+            <h3>PRQC 관계 품질 6요소</h3>
+            <PrqcInfoTip />
+          </div>
+          <RadarChart
+            values={prqcValues}
+            labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])}
+            activeIndex={activePrqcIndex}
+            onActiveChange={setActivePrqcIndex}
+          />
           <div className="radar-legend">
             <div className="radar-legend-item">
               <span className="radar-legend-swatch" style={{ background: 'var(--accent-pink)' }} />
@@ -205,22 +284,33 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         </div>
       </div>
 
-      <div className="evidence-row">
+      <div className="evidence-row report-analysis">
         {report.evidences.length > 0 ? (
-          report.evidences.slice(0, 2).map((ev) => (
-            <div className="evidence-card" key={ev.id}>
+          report.evidences.map((ev) => {
+            const evidencePrqcIndex = PRQC_ORDER.indexOf(ev.component);
+            const isActive = evidencePrqcIndex >= 0 && activePrqcIndex === evidencePrqcIndex;
+            return (
+            <div
+              className={`evidence-card${isActive ? ' is-active' : ''}${activePrqcIndex !== null && evidencePrqcIndex !== activePrqcIndex ? ' is-dimmed' : ''}`}
+              key={ev.id}
+              tabIndex="0"
+              onMouseEnter={() => evidencePrqcIndex >= 0 && setActivePrqcIndex(evidencePrqcIndex)}
+              onMouseLeave={() => setActivePrqcIndex(null)}
+              onFocus={() => evidencePrqcIndex >= 0 && setActivePrqcIndex(evidencePrqcIndex)}
+              onBlur={() => setActivePrqcIndex(null)}
+            >
               <div className="evidence-top">
                 <QuoteIcon />
-                <span className="evidence-tag">관찰됨 · {PRQC_LABELS[ev.component] ?? ev.component}</span>
+                <span className="evidence-tag">{PRQC_LABELS[ev.component] ?? ev.component}</span>
               </div>
               <div className="evidence-text">{ev.summary}</div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="evidence-card positive">
             <div className="evidence-top">
               <QuoteIcon />
-              <span className="evidence-tag">관찰됨</span>
             </div>
             <div className="evidence-text">뚜렷한 위험 신호는 관찰되지 않았어요. 지금처럼 편안한 대화가 이어지고 있어요.</div>
           </div>
@@ -252,6 +342,39 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
     </>
   );
+}
+
+function AnimatedScore({ score }) {
+  const target = Math.round(Number(score) || 0);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      setDisplayScore(target);
+      return undefined;
+    }
+
+    const duration = 950;
+    let frame;
+    let start;
+
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setDisplayScore(Math.round(target * eased));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    }
+
+    frame = window.requestAnimationFrame(() => {
+      setDisplayScore(0);
+      start = performance.now();
+      frame = window.requestAnimationFrame(tick);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [target]);
+
+  return <div className="gauge-score" aria-label={`종합 온도 ${target}점`}>{displayScore}</div>;
 }
 
 function NoReportState({ relationship, onAddData }) {

@@ -166,6 +166,10 @@ button.link-quiet {
   font-weight: 800;
   color: #241542;
 }
+.point-avatar {
+  object-fit: contain;
+  object-position: center;
+}
 
 .score-delta {
   font-size: 13px;

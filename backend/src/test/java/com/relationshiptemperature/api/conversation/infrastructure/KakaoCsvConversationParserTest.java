@@ -237,6 +237,23 @@ class KakaoCsvConversationParserTest {
     }
 
     @Test
+    void parsesQuotedSampleWithPlaceholderOtherName() throws Exception {
+        String content = """
+                Date,User,Message
+                "2026-08-20 18:00:00","강명진","아까 인스타 스토리에 올린 사진 누구랑 찍은 거야?"
+                "2026-08-20 18:02:15","상대방","아, 그거 동아리 남사친이랑 카페 갔을 때 찍은 건데 왜?"
+                "2026-08-20 18:03:40","강명진","둘이서만 카페 간 거야? 미리 말도 없이 둘이 만나는 건 좀 아니지 않아?"
+                "2026-08-20 18:05:10","상대방","그냥 오랜만에 만난 친구인데 뭘 그렇게 예민하게 굴어?"
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.selfParticipantName()).isEqualTo("강명진");
+        assertThat(parsed.otherParticipantName()).isEqualTo("상대방");
+        assertThat(parsed.messages()).hasSize(4);
+    }
+
+    @Test
     void ignoresStrayVariationSelectorAfterHangulName() throws Exception {
         String content = """
                 Date,User,Message

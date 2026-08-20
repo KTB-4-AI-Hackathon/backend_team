@@ -201,3 +201,105 @@
   overflow-y: auto;
   position: relative;
 }
+
+/* ===== Mobile (phone) layout — desktop above 768px is untouched ===== */
+@media (max-width: 768px) {
+  .auth-check-splash {
+    height: 100dvh;
+  }
+  .app-shell {
+    flex-direction: column;
+    height: 100dvh;
+  }
+  .main {
+    order: 1;
+    height: auto;
+    min-height: 0;
+  }
+  /* Sidebar becomes a bottom tab bar */
+  .sidebar,
+  .sidebar.collapsed {
+    order: 2;
+    width: 100%;
+    flex: 0 0 auto;
+    height: auto;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+    border-right: none;
+    border-top: 1px solid var(--border);
+    background: rgba(20, 16, 58, 0.92);
+    backdrop-filter: blur(8px);
+  }
+  .sidebar .brand,
+  .sidebar.collapsed .brand,
+  .sidebar .sidebar-spacer {
+    display: none;
+  }
+  .sidebar .nav {
+    flex: 1;
+    flex-direction: row;
+    gap: 2px;
+    margin-top: 0;
+  }
+  .sidebar .nav-item,
+  .sidebar.collapsed .nav-item {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 7px 2px;
+    border-radius: 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .sidebar .nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  .sidebar .nav-label,
+  .sidebar.collapsed .nav-label {
+    display: block;
+    white-space: nowrap;
+  }
+  .sidebar .nav-item.active {
+    box-shadow: none;
+  }
+  .sidebar .profile,
+  .sidebar.collapsed .profile {
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 8px;
+    border: none;
+    background: none;
+  }
+  .sidebar .profile-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+  .sidebar .profile-text,
+  .sidebar.collapsed .profile-text {
+    display: block;
+    flex: none !important;
+    text-align: center;
+  }
+  .sidebar .profile-name {
+    display: none;
+  }
+  .sidebar .profile-sub {
+    font-size: 10px;
+    text-align: center;
+  }
+}
+
+.brand-name-img {
+  display: block;
+  height: 14px;
+  width: auto;
+  margin-top: 2px;
+  image-rendering: pixelated;
+}
