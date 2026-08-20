@@ -125,7 +125,7 @@ export default function DashboardPage() {
       const height = Math.max(area.clientHeight, 520);
       const x = -24 + Math.random() * (width + 48);
       const y = 80 + Math.random() * Math.max(140, height - 180);
-      const scale = 0.34 + Math.random() * 0.71;
+      const scale = 0.06 + Math.random() * 0.54;
       const rotation = -18 + Math.random() * 36;
       const duration = 7000 + Math.random() * 11000;
 
