@@ -116,9 +116,9 @@
 
 .report-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(236px, 300px) minmax(280px, 1fr);
   gap: 22px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .gauge-wrap {
@@ -168,6 +168,70 @@
   gap: 10px 16px;
   margin-top: 12px;
 }
+.prqc-card > svg {
+  /* A full-width SVG becomes very tall on desktop and pushes the AI analysis
+     below the fold. Keep the diagram large enough to read, but compact. */
+  display: block;
+  width: min(100%, 442px) !important;
+  margin: 0 auto;
+}
+.radar-chart {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-chart-enter 520ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
+}
+.radar-data-area {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-data-fill 500ms cubic-bezier(0.22, 0.9, 0.28, 1) 130ms both;
+}
+.radar-data-point {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-point-in 280ms ease-out 360ms both;
+}
+@keyframes radar-chart-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes radar-data-fill {
+  from {
+    opacity: 0;
+    transform: scale(0.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes radar-point-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.prqc-card .radar-legend {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-chart,
+  .radar-data-area,
+  .radar-data-point {
+    animation: none;
+  }
+}
 .radar-legend-item {
   display: flex;
   align-items: center;
@@ -186,7 +250,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+.report-analysis .evidence-card {
+  padding: 14px 16px;
 }
 .evidence-card {
   background: var(--accent-amber-soft);

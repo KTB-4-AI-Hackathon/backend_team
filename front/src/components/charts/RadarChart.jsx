@@ -42,7 +42,7 @@ export default function RadarChart({ values, labels }) {
   const dataPoly = dataPts.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
+    <svg className="radar-chart" viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
       {rings}
       <polygon
         points={cutPts}
@@ -53,12 +53,19 @@ export default function RadarChart({ values, labels }) {
         opacity="0.85"
       />
       {axes}
-      <polygon points={dataPoly} fill="rgba(226,160,201,0.28)" stroke="var(--accent-pink)" strokeWidth="2" />
+      <polygon
+        className="radar-data-area"
+        points={dataPoly}
+        fill="rgba(226,160,201,0.28)"
+        stroke="var(--accent-pink)"
+        strokeWidth="2"
+      />
       {dataPts.map((p, i) => {
         const low = values[i] < ATTENTION_THRESHOLD;
         return (
           <circle
             key={i}
+            className="radar-data-point"
             cx={p[0].toFixed(1)}
             cy={p[1].toFixed(1)}
             r="4"

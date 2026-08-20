@@ -189,7 +189,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card prqc-card">
           <h3>PRQC 관계 품질 6요소</h3>
           <RadarChart values={prqcValues} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
           <div className="radar-legend">
@@ -205,7 +205,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         </div>
       </div>
 
-      <div className="evidence-row">
+      <div className="evidence-row report-analysis">
         {report.evidences.length > 0 ? (
           report.evidences.slice(0, 2).map((ev) => (
             <div className="evidence-card" key={ev.id}>
