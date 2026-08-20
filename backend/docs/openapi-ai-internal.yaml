@@ -783,7 +783,7 @@ components:
     ConsultationAnswerRequest:
       type: object
       additionalProperties: false
-      required: [reportId, overallScore, prqc, evidences, recentMessages, userMessage]
+      required: [reportId, overallScore, prqc, evidences, recentMessages, conversationMessages, userMessage]
       properties:
         reportId:
           type: string
@@ -806,10 +806,30 @@ components:
           maxItems: 20
           items:
             $ref: "#/components/schemas/ConsultationHistoryMessage"
+        conversationMessages:
+          type: array
+          description: 업로드된 CSV/TXT에서 파싱한 관계 대화 원문 전체
+          items:
+            $ref: "#/components/schemas/ConsultationConversationMessage"
         userMessage:
           type: string
           minLength: 1
           maxLength: 4000
+    ConsultationConversationMessage:
+      type: object
+      additionalProperties: false
+      required: [sender, sentAt, text]
+      properties:
+        sender:
+          type: string
+          enum: [SELF, OTHER]
+        sentAt:
+          type: string
+          format: date-time
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
     ConsultationEvidenceReference:
       type: object
       additionalProperties: false
