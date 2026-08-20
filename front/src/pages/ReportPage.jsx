@@ -170,10 +170,10 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
 
       <div className="report-grid">
-        <div className="card">
+        <div className="card overview-card">
           <h3>종합 온도</h3>
           <div className="gauge-wrap">
-            <Gauge score={report.overall.score} />
+            <Gauge score={report.overall.score} size={216} />
             <div className="gauge-center">
               <AnimatedScore score={report.overall.score} />
               <div className="gauge-max">/ 100</div>
@@ -184,8 +184,20 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
               )}
             </div>
           </div>
-          <div className="spark-block">
-            <div className="spark-block-label">{report.overall.statusLabel}</div>
+          <div className="prqc-mini" aria-label="PRQC 관계 품질 점수">
+            <div className="prqc-mini-title">PRQC 관계 품질</div>
+            {PRQC_ORDER.map((key) => {
+              const score = Math.max(0, Math.min(100, Math.round(report.prqc[key] ?? 0)));
+              return (
+                <div className="prqc-mini-row" key={key}>
+                  <span className="prqc-mini-label">{PRQC_LABELS[key]}</span>
+                  <div className="prqc-mini-track" aria-hidden="true">
+                    <span className="prqc-mini-fill" style={{ width: `${score}%` }} />
+                  </div>
+                  <strong className="prqc-mini-score">{score}</strong>
+                </div>
+              );
+            })}
           </div>
         </div>
 
