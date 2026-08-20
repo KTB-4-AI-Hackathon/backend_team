@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Starfield from './components/Starfield';
 import AppLayout from './components/AppLayout';
+import IntroPage from './intro/IntroPage';
 import LoginPage from './pages/LoginPage';
 import ConsentPage from './pages/ConsentPage';
 import DashboardPage from './pages/DashboardPage';
@@ -14,6 +15,7 @@ export default function App() {
       <BrowserRouter>
         <Starfield />
         <Routes>
+          <Route path="/intro" element={<IntroPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/consent" element={<ConsentPage />} />
 
