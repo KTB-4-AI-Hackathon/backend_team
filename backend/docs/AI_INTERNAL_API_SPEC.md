@@ -30,7 +30,6 @@ AI 서버는 다음을 담당하지 않는다.
 
 - 프론트엔드용 AnalysisJob 생성·진행률 관리
 - 웹훅 또는 콜백 전송
-- 사용자 체크인 점수 활용
 - canonical `overall.score` 계산
 - 관계 상태 라벨 결정
 - 공개 리포트 저장
@@ -140,9 +139,41 @@ Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipar
 - `conversation.url`은 HTTPS만 허용한다.
 - AI 서버는 URL 다운로드 전에 호스트 allowlist 또는 서명된 스토리지 도메인을 검증한다.
 - 다운로드 데이터의 크기와 SHA-256이 요청값과 일치해야 한다.
-- 체크인 응답은 요청에 포함하지 않는다.
+- 위 JSON 요청에도 `context`로 사용자·관계·체크인 정보를 함께 포함한다.
 
-### 5.2 multipart 요청
+### 5.2 분석 컨텍스트
+
+AI는 대화 파일만으로 단정하지 않도록, 백엔드가 아래의 **최소 필요 컨텍스트**도 함께 전달한다.
+
+```json
+{
+  "user": {
+    "userId": "0198c8a7-3000-7000-8000-000000000002",
+    "displayName": "우",
+    "timezone": "Asia/Seoul"
+  },
+  "relationship": {
+    "relationshipId": "0198c8a7-3000-7000-8000-000000000003",
+    "name": "민지",
+    "relationshipType": "FRIEND",
+    "status": "ANALYZING"
+  },
+  "checkIn": {
+    "checkInId": "0198c8a7-3000-7000-8000-000000000004",
+    "weekStart": "2026-08-17",
+    "answers": [
+      { "questionCode": "RELATIONSHIP_FEELING", "score": 6 },
+      { "questionCode": "CONVERSATION_COMFORT", "score": 4 }
+    ]
+  }
+}
+```
+
+- `answers.score`는 1~7 정수이며, 현재 제공 질문은 `RELATIONSHIP_FEELING`, `CONVERSATION_COMFORT`다.
+- AI는 이 정보를 PRQC와 관찰 근거를 해석하는 보조 맥락으로만 사용한다. canonical `overall.score`는 여전히 백엔드가 계산한다.
+- 카카오 식별자, OAuth/세션 토큰, 프로필 이미지 URL은 전달하지 않는다.
+
+### 5.3 multipart 요청
 
 ```text
 analysisId: 0198c8a7-3000-7000-8000-000000000001
@@ -150,10 +181,13 @@ relationshipType: FRIEND
 format: NORMALIZED_NDJSON_GZIP
 formatVersion: conversation-ndjson-1.0.0
 sha256: a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d
+context: {"user":{"userId":"...","displayName":"우","timezone":"Asia/Seoul"},"relationship":{...},"checkIn":{...}}
 file: conversation.ndjson.gz
 ```
 
-### 5.3 성공 응답
+`context` 파트의 Content-Type은 `application/json`이다. 따라서 전체 요청은 JSON이 아니라 **정규화 대화 파일 + JSON 컨텍스트로 구성된 multipart/form-data**다.
+
+### 5.4 성공 응답
 
 응답: `200 OK`
 
@@ -218,7 +252,7 @@ overall.score = round(
 - 점수는 `0~100` 정수로 제한한다.
 - 백엔드는 사용한 정책 버전을 `scoringPolicyVersion`으로 리포트에 저장한다.
 - AI `modelVersion`과 백엔드 `scoringPolicyVersion`은 독립적으로 관리한다.
-- MVP에서 체크인 응답은 위 산식에 포함하지 않는다.
+- 체크인 응답은 AI의 PRQC 해석에 전달되지만, MVP에서는 위 canonical 산식에 직접 포함하지 않는다.
 
 권장 버전 형식:
 

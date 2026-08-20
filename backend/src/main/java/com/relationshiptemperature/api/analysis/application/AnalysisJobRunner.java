@@ -1,8 +1,13 @@
 package com.relationshiptemperature.api.analysis.application;
 
+import com.relationshiptemperature.api.auth.domain.User;
+import com.relationshiptemperature.api.auth.repository.UserRepository;
 import com.relationshiptemperature.api.analysis.domain.AnalysisJob;
 import com.relationshiptemperature.api.analysis.domain.AnalysisStage;
 import com.relationshiptemperature.api.analysis.repository.AnalysisJobRepository;
+import com.relationshiptemperature.api.checkin.domain.CheckIn;
+import com.relationshiptemperature.api.checkin.repository.CheckInAnswerRepository;
+import com.relationshiptemperature.api.checkin.repository.CheckInRepository;
 import com.relationshiptemperature.api.relationship.domain.Relationship;
 import com.relationshiptemperature.api.relationship.repository.RelationshipRepository;
 import com.relationshiptemperature.api.report.application.ReportService;
@@ -22,17 +27,26 @@ public class AnalysisJobRunner {
 
     private final AnalysisJobRepository jobRepository;
     private final RelationshipRepository relationshipRepository;
+    private final UserRepository userRepository;
+    private final CheckInRepository checkInRepository;
+    private final CheckInAnswerRepository checkInAnswerRepository;
     private final AiAnalysisClient aiAnalysisClient;
     private final ReportService reportService;
 
     public AnalysisJobRunner(
             AnalysisJobRepository jobRepository,
             RelationshipRepository relationshipRepository,
+            UserRepository userRepository,
+            CheckInRepository checkInRepository,
+            CheckInAnswerRepository checkInAnswerRepository,
             AiAnalysisClient aiAnalysisClient,
             ReportService reportService
     ) {
         this.jobRepository = jobRepository;
         this.relationshipRepository = relationshipRepository;
+        this.userRepository = userRepository;
+        this.checkInRepository = checkInRepository;
+        this.checkInAnswerRepository = checkInAnswerRepository;
         this.aiAnalysisClient = aiAnalysisClient;
         this.reportService = reportService;
     }
@@ -42,12 +56,37 @@ public class AnalysisJobRunner {
     public void run(AnalysisRequestedEvent event) {
         AnalysisJob job = jobRepository.findById(event.jobId()).orElseThrow();
         Relationship relationship = relationshipRepository.findById(job.getRelationshipId()).orElseThrow();
+        User user = userRepository.findById(job.getUserId()).orElseThrow();
+        CheckIn checkIn = checkInRepository.findById(job.getCheckInId()).orElseThrow();
         try {
             update(job, AnalysisStage.LOADING_CONVERSATION, 10);
             update(job, AnalysisStage.ANALYZING_MESSAGE_PATTERNS, 30);
             update(job, AnalysisStage.ANALYZING_EMOTIONAL_FLOW, 60);
             AiAnalysisClient.AnalysisResult result = analyzeWithRetry(new AiAnalysisClient.AnalysisRequest(
-                    job.getId(), job.getConversationFileId(), relationship.getRelationshipType()
+                    job.getId(),
+                    job.getConversationFileId(),
+                    relationship.getRelationshipType(),
+                    new AiAnalysisClient.AnalysisContext(
+                            new AiAnalysisClient.UserContext(
+                                    user.getId(), user.getDisplayName(), user.getTimezone()
+                            ),
+                            new AiAnalysisClient.RelationshipContext(
+                                    relationship.getId(),
+                                    relationship.getName(),
+                                    relationship.getRelationshipType(),
+                                    relationship.getStatus().name()
+                            ),
+                            new AiAnalysisClient.CheckInContext(
+                                    checkIn.getId(),
+                                    checkIn.getWeekStart(),
+                                    checkInAnswerRepository.findAllByCheckInIdIn(java.util.List.of(checkIn.getId()))
+                                            .stream()
+                                            .map(answer -> new AiAnalysisClient.CheckInAnswerContext(
+                                                    answer.getQuestionCode().name(), answer.getScore()
+                                            ))
+                                            .toList()
+                            )
+                    )
             ));
             update(job, AnalysisStage.CALCULATING_PRQC, 80);
             update(job, AnalysisStage.CALCULATING_RELATIONSHIP_SCORE, 95);

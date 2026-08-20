@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: 관계온도 API
-  version: 1.1.0
+  version: 1.2.0
   summary: 카카오톡 대화 기반 관계 건강도 분석 및 AI 상담 API
   description: |
     관계 등록, 카카오톡 대화 업로드, 비동기 PRQC 분석, 주간 대시보드,
@@ -14,6 +14,10 @@ info:
     MVP에서 동기 방식이다. Job의 stage와 progress는 백엔드 오케스트레이션
     기준의 예상값이다. AI 서버는 PRQC 6요소와 근거를 반환하고 백엔드는
     버전된 관계 유형별 정책으로 canonical overall.score를 계산한다.
+
+    업로드한 카카오톡 파일은 백엔드가 검증·파싱하고 정규화 메시지를 MongoDB에
+    저장한다. 분석 Worker는 MongoDB 메시지를 NDJSON gzip으로 생성하여 내부
+    AI 서버에 multipart/form-data로 전달한다.
 servers:
   - url: /api/v1
     description: 현재 호스트의 v1 API
@@ -299,20 +303,26 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [file, source]
+              required: [file, source, selfParticipantName]
               properties:
                 file:
                   type: string
                   format: binary
-                  description: .txt, 최대 50MB
+                  description: 카카오톡 내보내기 `.txt` 또는 `.csv`, 최대 50MB
                 source:
                   type: string
                   const: KAKAO_TALK
+                selfParticipantName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: 대화 참여자 중 현재 사용자의 카카오톡 표시 이름
       responses:
         "201":
           description: |
-            업로드 및 형식 검증 완료. 공개 응답에는 원본 또는 정규화 파일의
-            저장 경로, Presigned URL, 다운로드 자격증명을 포함하지 않는다.
+            업로드, 형식 검증 및 파싱 완료. 파싱한 메시지는 MongoDB에 저장한다.
+            공개 응답에는 원본 또는 정규화 파일의 저장 경로, Presigned URL,
+            다운로드 자격증명을 포함하지 않는다.
           content:
             application/json:
               schema:
@@ -453,7 +463,8 @@ paths:
       summary: 대화 분석 Job 시작
       description: |
         백엔드가 Job을 생성하고 Queue에 등록한 뒤 즉시 202를 반환한다.
-        Backend Worker는 정규화 대화 파일 참조로 AI 서버를 동기 호출한다.
+        Backend Worker는 MongoDB에서 파싱 메시지를 조회하고 정규화 NDJSON gzip을
+        생성한 뒤 multipart/form-data로 AI 서버를 동기 호출한다.
         checkInId는 분석 시점 연결용 메타데이터이며 MVP 점수 계산이나 AI 입력에
         사용하지 않는다. Queue 등록 자체가 불가능한 경우에만 요청 단계에서
         503 ANALYSIS_UNAVAILABLE을 반환할 수 있다.
@@ -497,9 +508,10 @@ paths:
       description: |
         stage와 progress는 AI 서버가 보고한 실제 내부 진행률이 아니라 백엔드가
         파일 준비, AI 호출, 결과 저장 상태를 기준으로 계산한 UI 표시용 예상값이다.
-        AI 응답 전에는 최대 90, 리포트 저장 중에는 최대 95로 제한하며 리포트가
-        저장되고 SUCCEEDED가 된 경우에만 100을 반환한다. 접수 후 내부 AI 호출이
-        실패해도 이 API는 200과 status=FAILED, failure 객체를 반환한다.
+        현재 구현은 대화 로딩 10, 메시지 패턴 30, 감정 흐름 60, PRQC 계산 80,
+        종합점수 계산 및 저장 95, 성공 완료 100을 사용한다. 리포트가 저장되고
+        SUCCEEDED가 된 경우에만 100을 반환한다. 접수 후 내부 AI 호출이 실패해도
+        이 API는 200과 status=FAILED, failure 객체를 반환한다.
       parameters:
         - $ref: "#/components/parameters/JobId"
       responses:
@@ -1197,7 +1209,13 @@ components:
         - originalFileName
         - sizeBytes
         - source
+        - selfParticipantName
+        - otherParticipantName
         - validationStatus
+        - messageCount
+        - conversationStartedAt
+        - conversationEndedAt
+        - expiresAt
         - uploadedAt
       properties:
         id:
@@ -1213,20 +1231,28 @@ components:
         source:
           type: string
           const: KAKAO_TALK
+        selfParticipantName:
+          type: string
+          maxLength: 100
+          description: 업로드 요청에서 지정하고 파싱 결과로 확인된 현재 사용자 이름
+        otherParticipantName:
+          type: string
+          maxLength: 100
+          description: 파싱 결과로 확인된 상대 참여자 이름
         validationStatus:
           type: string
           enum: [VALIDATING, VALID, INVALID]
         messageCount:
-          type: [integer, "null"]
+          type: integer
           minimum: 0
         conversationStartedAt:
-          type: [string, "null"]
+          type: string
           format: date-time
         conversationEndedAt:
-          type: [string, "null"]
+          type: string
           format: date-time
         expiresAt:
-          type: [string, "null"]
+          type: string
           format: date-time
         uploadedAt:
           $ref: "#/components/schemas/DateTime"
@@ -1347,8 +1373,10 @@ components:
           minimum: 0
           maximum: 100
           description: |
-            백엔드 오케스트레이션 기준의 UI 표시용 예상 진행률. AI 응답 전 최대 90,
-            리포트 저장 중 최대 95, status=SUCCEEDED인 경우에만 100이다.
+            백엔드 오케스트레이션 기준의 UI 표시용 예상 진행률.
+            LOADING_CONVERSATION=10, ANALYZING_MESSAGE_PATTERNS=30,
+            ANALYZING_EMOTIONAL_FLOW=60, CALCULATING_PRQC=80,
+            CALCULATING_RELATIONSHIP_SCORE=95이며 status=SUCCEEDED일 때만 100이다.
         estimatedSecondsRemaining:
           type: [integer, "null"]
           minimum: 0
