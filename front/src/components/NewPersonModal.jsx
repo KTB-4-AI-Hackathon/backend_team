@@ -4,6 +4,7 @@ import { uploadConversationFile, getConversationFile } from '../api/conversation
 import { submitCheckIn } from '../api/checkins';
 import { startAnalysis, pollAnalysisJob } from '../api/analyses';
 import { RELATIONSHIP_TYPES, ANALYSIS_STAGE_LABELS } from '../data/constants';
+import { KAKAO_EXPORT_STEPS } from '../data/kakaoExportSteps';
 import { useAuth } from '../context/AuthContext';
 import { CloseIcon, UploadIcon, CheckIcon } from './Icons';
 import Astronaut from './Astronaut';
@@ -25,6 +26,8 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
   const [fileState, setFileState] = useState(null); // { name, sizeBytes, status: 'uploading'|'valid'|'invalid' }
   const [conversationFileId, setConversationFileId] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [exportGuideOpen, setExportGuideOpen] = useState(false);
+  const [exportGuideStep, setExportGuideStep] = useState(0);
   const fileInputRef = useRef(null);
 
   const [q1, setQ1] = useState(4);
@@ -48,9 +51,19 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
     setQ2(5);
     setJob(null);
     setFailure(null);
+    setExportGuideOpen(false);
+    setExportGuideStep(0);
   }, [open, isAddData, relationship]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  useEffect(() => {
+    if (!exportGuideOpen) return undefined;
+    const timer = window.setInterval(() => {
+      setExportGuideStep((current) => (current + 1) % KAKAO_EXPORT_STEPS.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [exportGuideOpen]);
 
   if (!open) return null;
 
@@ -185,7 +198,7 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
 
   return (
     <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card">
+      <div className={`modal-card${exportGuideOpen ? ' guide-open' : ''}`}>
         <button className="modal-close" aria-label="닫기" onClick={onClose}>
           <CloseIcon />
         </button>
@@ -258,7 +271,17 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
                   hidden
                   onChange={(e) => handleFile(e.target.files?.[0])}
                 />
-                <ExportHelpLink />
+                <button
+                  className="export-guide-trigger"
+                  type="button"
+                  onClick={() => {
+                    setExportGuideStep(0);
+                    setExportGuideOpen(true);
+                  }}
+                >
+                  카카오톡 대화 내보내는 방법 보기
+                  <span aria-hidden="true">↗</span>
+                </button>
 
                 {fileState?.status === 'uploading' && (
                   <p className="checkin-note" style={{ marginTop: 10 }}>파일을 확인하는 중이에요...</p>
@@ -394,6 +417,68 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
           </div>
         )}
       </div>
+      {exportGuideOpen && (
+        <div
+          className="modal-help-dock"
+          role="dialog"
+          aria-modal="true"
+          aria-label="카카오톡 대화 내보내는 방법"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setExportGuideOpen(false);
+          }}
+        >
+          <div className="modal-help-card">
+            <div className="modal-help-head">
+              <div>
+                <div className="modal-help-title">카카오톡 대화 내보내는 방법</div>
+                <div className="modal-help-sub">아래 순서대로 저장한 .txt 파일을 업로드해 주세요.</div>
+              </div>
+              <button className="modal-close modal-help-close" aria-label="안내 닫기" onClick={() => setExportGuideOpen(false)}>
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="modal-help-carousel">
+              <button
+                type="button"
+                className="modal-help-arrow"
+                aria-label="이전 안내 단계"
+                onClick={() => setExportGuideStep((current) => (current - 1 + KAKAO_EXPORT_STEPS.length) % KAKAO_EXPORT_STEPS.length)}
+              >
+                ‹
+              </button>
+              <figure className="modal-help-step">
+                <img
+                  src={KAKAO_EXPORT_STEPS[exportGuideStep].img}
+                  alt={KAKAO_EXPORT_STEPS[exportGuideStep].caption}
+                />
+                <figcaption>{KAKAO_EXPORT_STEPS[exportGuideStep].caption}</figcaption>
+              </figure>
+              <button
+                type="button"
+                className="modal-help-arrow"
+                aria-label="다음 안내 단계"
+                onClick={() => setExportGuideStep((current) => (current + 1) % KAKAO_EXPORT_STEPS.length)}
+              >
+                ›
+              </button>
+            </div>
+            <div className="modal-help-progress" aria-live="polite">
+              {KAKAO_EXPORT_STEPS.map((stepItem, index) => (
+                <button
+                  type="button"
+                  key={stepItem.caption}
+                  className={`modal-help-dot${index === exportGuideStep ? ' active' : ''}`}
+                  aria-label={`${index + 1}단계 보기`}
+                  aria-current={index === exportGuideStep ? 'step' : undefined}
+                  onClick={() => setExportGuideStep(index)}
+                />
+              ))}
+              <span>{exportGuideStep + 1} / {KAKAO_EXPORT_STEPS.length}</span>
+            </div>
+            <p className="modal-export-note">예시 화면은 개인정보 보호를 위해 가상의 대화로 재현한 이미지예요.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -405,22 +490,6 @@ function StepDot({ n, step }) {
     <div className={`step-dot ${active ? 'active' : ''} ${done ? 'done' : ''}`}>
       {done ? <CheckIcon strokeWidth="3" style={{ width: 13, height: 13 }} /> : n}
     </div>
-  );
-}
-
-function ExportHelpLink() {
-  const [show, setShow] = useState(false);
-  return (
-    <>
-      <button className="link-quiet" style={{ marginTop: 10 }} onClick={() => setShow((v) => !v)} type="button">
-        카카오톡 대화 내보내기 방법 보기
-      </button>
-      {show && (
-        <p className="checkin-note" style={{ marginTop: 8 }}>
-          카카오톡 채팅방 &gt; 메뉴 &gt; 대화 내보내기를 선택하면 .txt 파일로 저장할 수 있어요. CSV 형식의 채팅 파일도 업로드할 수 있어요.
-        </p>
-      )}
-    </>
   );
 }
 
