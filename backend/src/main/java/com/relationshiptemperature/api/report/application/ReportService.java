@@ -75,7 +75,8 @@ public class ReportService {
         Instant analyzedAt = Instant.now();
         RelationshipReport report = reportRepository.save(new RelationshipReport(
                 relationship.getUserId(), relationship.getId(), jobId, overall, change, weekStart,
-                result.components(), result.modelVersion(), RelationshipScoringPolicy.VERSION, analyzedAt
+                result.components(), result.modelVersion(), RelationshipScoringPolicy.VERSION,
+                result.selfReportComparison(), analyzedAt
         ));
 
         List<ReportEvidence> evidences = result.evidences().stream()

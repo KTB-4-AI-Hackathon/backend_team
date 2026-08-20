@@ -317,6 +317,21 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         )}
       </div>
 
+      {report.selfReportComparison?.trim() && (
+        <section className="card self-report-comparison" aria-labelledby="self-report-comparison-title">
+          <div className="self-report-comparison-heading">
+            <span className="self-report-comparison-kicker">체크인과 대화 분석</span>
+            <h3 id="self-report-comparison-title">내가 느낀 관계와 대화에서 보인 모습</h3>
+          </div>
+          <p>
+            {report.selfReportComparison}
+          </p>
+          <span className="self-report-comparison-note">
+            이 내용은 자기보고와 대화에서 관찰된 신호를 비교한 참고 설명이에요.
+          </span>
+        </section>
+      )}
+
       <div className="card trend-card">
         <h3>시간에 따른 변화</h3>
         <div className="trend-chart-wrap">

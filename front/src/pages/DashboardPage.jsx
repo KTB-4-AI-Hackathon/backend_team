@@ -5,7 +5,6 @@ import Moon from '../components/Moon';
 import Astronaut from '../components/Astronaut';
 import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal';
 import { ChevronDownIcon, CheckIcon, PlusIcon, SparkleIcon, WarnIcon } from '../components/Icons';
-import { avatarGradientFor } from '../utils/avatar';
 import { pointImageFor } from '../utils/pointImage';
 import { RELATIONSHIP_TYPE_LABELS } from '../data/constants';
 import ufoImage from '../assets/images/UFO.png';
@@ -66,6 +65,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const sortMenuRef = useRef(null);
+  const ufoRef = useRef(null);
 
   const load = useCallback(async (nextSort) => {
     setLoading(true);
@@ -101,11 +101,49 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const ufo = ufoRef.current;
+    const area = ufo?.parentElement;
+    if (!ufo || !area) return undefined;
+
+    let timer;
+    let firstMoveFrame;
+    let cancelled = false;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function moveUfo() {
+      if (cancelled) return;
+      const width = Math.max(area.clientWidth, 320);
+      const height = Math.max(area.clientHeight, 520);
+      const x = -24 + Math.random() * (width + 48);
+      const y = 80 + Math.random() * Math.max(140, height - 180);
+      const scale = 0.34 + Math.random() * 0.71;
+      const rotation = -18 + Math.random() * 36;
+      const duration = 7000 + Math.random() * 11000;
+
+      ufo.style.transition = reducedMotion
+        ? 'none'
+        : `transform ${duration.toFixed(0)}ms cubic-bezier(0.32, 0.04, 0.22, 1)`;
+      ufo.style.transform = `translate3d(${x.toFixed(0)}px, ${y.toFixed(0)}px, 0) rotate(${rotation.toFixed(1)}deg) scale(${scale.toFixed(2)})`;
+
+      if (!reducedMotion) {
+        timer = window.setTimeout(moveUfo, duration + 300 + Math.random() * 1800);
+      }
+    }
+
+    firstMoveFrame = window.requestAnimationFrame(moveUfo);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(firstMoveFrame);
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   const isEmpty = !loading && !error && data && data.relationships.length === 0;
 
   return (
     <section className="view">
-      <img className="dashboard-ufo" src={ufoImage} alt="" aria-hidden="true" />
+      <img ref={ufoRef} className="dashboard-ufo" src={ufoImage} alt="" aria-hidden="true" />
       <div className="page-head">
         <div className="page-head-copy">
           <h1 className="page-title">이번 주 나의 관계 온도</h1>
@@ -207,7 +245,7 @@ export default function DashboardPage() {
                     onClick={() => navigate(`/report/${p.id}`)}
                   >
                     <div className="person-top">
-                      <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
+                      <img className="avatar point-avatar small-point-avatar" src={pointImageFor(p.score)} alt="" />
                       <div>
                         <div className="person-name">{p.name}</div>
                         <span className="chip">{RELATIONSHIP_TYPE_LABELS[p.relationshipType]}</span>
@@ -271,7 +309,7 @@ export default function DashboardPage() {
               {data.needsAttention.map((p) => (
                 <div className="warn-row" key={p.relationshipId}>
                   <div className="trend-info">
-                    <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
+                    <img className="avatar point-avatar small-point-avatar" src={pointImageFor(p.score)} alt="" />
                     <div>
                       <div className="trend-name">{p.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.reasonLabel}</div>

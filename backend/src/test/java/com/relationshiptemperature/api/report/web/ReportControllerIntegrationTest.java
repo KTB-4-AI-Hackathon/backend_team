@@ -71,6 +71,7 @@ class ReportControllerIntegrationTest {
         assertThat(saved.getStatusCode()).isEqualTo(ReportStatus.GOOD);
         assertThat(saved.getStatusLabel()).isEqualTo("양호");
         assertThat(saved.getDisclaimer()).isEqualTo(RelationshipReport.DEFAULT_DISCLAIMER);
+        assertThat(saved.getSelfReportComparison()).isEqualTo("체크인 응답과 대화 분석을 비교한 설명이에요.");
         assertThat(evidenceRepository.findAllByReportId(saved.getId()))
                 .singleElement()
                 .satisfies(evidence -> {
@@ -113,6 +114,7 @@ class ReportControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.prqc.love").value(70))
                 .andExpect(jsonPath("$.data.evidences[0].component").value("passion"))
                 .andExpect(jsonPath("$.data.evidences[0].metric.currentValue").value(1.1))
+                .andExpect(jsonPath("$.data.selfReportComparison").value("체크인 응답과 대화 분석을 비교한 설명이에요."))
                 .andExpect(jsonPath("$.data.trend.length()").value(3))
                 .andExpect(jsonPath("$.data.trend[0].weekStart").value(currentWeek.minusWeeks(5).toString()))
                 .andExpect(jsonPath("$.data.trend[0].label").value("5주 전"))
@@ -206,7 +208,8 @@ class ReportControllerIntegrationTest {
                 List.of(new EvidenceResult(
                         "passion", score, "대화 빈도의 변화가 관찰됐어요.",
                         new Metric("weeklyConversationCount", 1.1, 3.2, "회/주", "최근 4주 vs 이전 4주")
-                ))
+                )),
+                "체크인 응답과 대화 분석을 비교한 설명이에요."
         );
     }
 

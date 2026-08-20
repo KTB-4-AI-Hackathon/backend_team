@@ -69,6 +69,21 @@ class KakaoCsvConversationParserTest {
     }
 
     @Test
+    void acceptsTestFixtureWithTheExactSelfMarker() throws Exception {
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,본인,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        var parsed = parser.parse(input(content), "강명진", true);
+
+        assertThat(parsed.selfParticipantName()).isEqualTo("본인");
+        assertThat(parsed.otherParticipantName()).isEqualTo("이진우");
+        assertThat(parsed.messages().getFirst().role()).isEqualTo(ConversationParticipantRole.SELF);
+    }
+
+    @Test
     void rejectsCsvWithAnExtraHeaderColumn() {
         assertInvalidCsv("""
                 Date,User,Message,Attachment

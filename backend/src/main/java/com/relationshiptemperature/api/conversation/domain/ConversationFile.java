@@ -60,6 +60,9 @@ public class ConversationFile extends BaseEntity {
     @Column(name = "other_participant_name", length = 100)
     private String otherParticipantName;
 
+    @Column(name = "test_fixture", nullable = false)
+    private boolean testFixture;
+
     protected ConversationFile() {
     }
 
@@ -72,6 +75,19 @@ public class ConversationFile extends BaseEntity {
             String sha256,
             Instant expiresAt
     ) {
+        this(userId, relationshipId, originalFileName, storageKey, sizeBytes, sha256, expiresAt, false);
+    }
+
+    public ConversationFile(
+            UUID userId,
+            UUID relationshipId,
+            String originalFileName,
+            String storageKey,
+            long sizeBytes,
+            String sha256,
+            Instant expiresAt,
+            boolean testFixture
+    ) {
         this.userId = userId;
         this.relationshipId = relationshipId;
         this.originalFileName = originalFileName;
@@ -79,6 +95,7 @@ public class ConversationFile extends BaseEntity {
         this.sizeBytes = sizeBytes;
         this.sha256 = sha256;
         this.expiresAt = expiresAt;
+        this.testFixture = testFixture;
         this.validationStatus = ConversationFileStatus.VALIDATING;
     }
 
@@ -113,4 +130,5 @@ public class ConversationFile extends BaseEntity {
     public Instant getRawDeletedAt() { return rawDeletedAt; }
     public String getSelfParticipantName() { return selfParticipantName; }
     public String getOtherParticipantName() { return otherParticipantName; }
+    public boolean isTestFixture() { return testFixture; }
 }

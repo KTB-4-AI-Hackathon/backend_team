@@ -716,6 +716,7 @@ components:
         - components
         - evidences
         - warnings
+        - selfReportComparison
         - completedAt
       properties:
         analysisId:
@@ -743,6 +744,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AnalysisWarning"
+        selfReportComparison:
+          type: string
+          maxLength: 2000
+          description: 사용자 체크인 자기보고와 대화에서 관찰된 PRQC 신호의 일치·차이를 설명하는 문구
         completedAt:
           type: string
           format: date-time

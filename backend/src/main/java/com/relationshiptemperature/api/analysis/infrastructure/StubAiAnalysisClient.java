@@ -24,7 +24,8 @@ public class StubAiAnalysisClient implements AiAnalysisClient {
                         scores.passion(),
                         "대화 빈도와 시작 비율에 변화가 관찰됐어요. 실제 AI 어댑터로 교체해 주세요.",
                         new Metric("weeklyConversationCount", 1.0, null, "회/주", "최근 4주")
-                ))
+                )),
+                "체크인에서 느낀 관계의 분위기와 대화에서 관찰된 신호를 함께 살펴보세요."
         );
     }
 }

@@ -254,6 +254,7 @@ file: conversation.ndjson.gz
     }
   ],
   "warnings": [],
+  "selfReportComparison": "사용자는 체크인에서 대화를 편안하게 느낀다고 답했지만, 최근 대화에서는 한쪽의 만남 제안이 줄어든 신호가 함께 관찰됐어요.",
   "completedAt": "2026-08-19T06:22:24Z"
 }
 ```
@@ -262,6 +263,7 @@ file: conversation.ndjson.gz
 
 - PRQC 6개 필드는 모두 필수이며 `0~100` 정수다.
 - 각 근거의 `score`는 해당 `component` 점수와 일치해야 한다.
+- `selfReportComparison`은 체크인 자기보고와 대화에서 관찰된 신호의 일치·차이를 비진단적이고 단정하지 않는 표현으로 설명한다.
 - `summary`는 확정적 인과관계나 진단이 아니라 관찰된 패턴을 완곡하게 설명한다.
 - 원문 메시지 전체나 민감한 제3자 정보를 응답에 포함하지 않는다.
 - AI 서버는 canonical `overall.score`를 반환하지 않는다.

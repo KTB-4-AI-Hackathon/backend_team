@@ -47,6 +47,11 @@
   font-weight: 800;
   color: #241542;
 }
+.chat-point-avatar {
+  display: block;
+  object-fit: contain;
+  object-position: center;
+}
 .room-name-row {
   display: flex;
   justify-content: space-between;
@@ -77,6 +82,9 @@
   height: 100vh;
 }
 .chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 20px 32px;
   border-bottom: 1px solid var(--border);
 }
