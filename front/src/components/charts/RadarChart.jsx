@@ -17,7 +17,7 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
   const rings = [0.25, 0.5, 0.75, 1].map((f, ri) => {
     const pts = Array.from({ length: n }, (_, i) => polar(maxR * f, i, n).join(',')).join(' ');
     return (
-      <polygon key={ri} points={pts} fill="none" stroke="rgba(196,182,255,0.16)" strokeWidth="1" />
+      <polygon className="radar-ring" key={ri} points={pts} fill="none" stroke="rgba(196,182,255,0.16)" strokeWidth="1" />
     );
   });
 
@@ -31,6 +31,7 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
     <svg className={`radar-chart${activeIndex !== null ? ' has-active' : ''}`} viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
       {rings}
       <polygon
+        className="radar-threshold"
         points={cutPts}
         fill="none"
         stroke="var(--accent-amber)"
@@ -42,8 +43,8 @@ export default function RadarChart({ values, labels, activeIndex = null, onActiv
         className="radar-data-area"
         points={dataPoly}
         fill="rgba(226,160,201,0.28)"
-        stroke="var(--accent-pink)"
-        strokeWidth="2"
+        stroke="rgba(226,160,201,0.48)"
+        strokeWidth="1.4"
       />
       {dataPts.map((p, i) => {
         const low = values[i] < ATTENTION_THRESHOLD;

@@ -4,6 +4,7 @@ import { listRelationships, getRelationship } from '../api/relationships';
 import { fetchReport } from '../api/reports';
 import { createConsultation } from '../api/consultations';
 import { avatarGradientFor, initialsOf } from '../utils/avatar';
+import { pointImageFor } from '../utils/pointImage';
 import { PRQC_ORDER, PRQC_LABELS, RELATIONSHIP_TYPE_LABELS, RELATIONSHIP_STATUS_LABELS } from '../data/constants';
 import Gauge from '../components/charts/Gauge';
 import RadarChart from '../components/charts/RadarChart';
@@ -95,9 +96,13 @@ export default function ReportPage() {
             className={`mini-person ${p.id === id ? 'active' : ''}`}
             onClick={() => navigate(`/report/${p.id}`)}
           >
-            <div className="mini-avatar" style={{ background: avatarGradientFor(p.id) }}>
-              {p.initial || initialsOf(p.name)}
-            </div>
+            {pointImageFor(p.score) ? (
+              <img className="mini-avatar point-avatar" src={pointImageFor(p.score)} alt="" />
+            ) : (
+              <div className="mini-avatar" style={{ background: avatarGradientFor(p.id) }}>
+                {p.initial || initialsOf(p.name)}
+              </div>
+            )}
             <div>
               <div className="mini-name">{p.name}</div>
               <div className="mini-score">
@@ -156,9 +161,13 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
     <>
       <div className="report-head">
         <div className="report-who">
-          <div className="report-avatar" style={{ background: avatarGradientFor(report.relationship.id) }}>
-            {report.relationship.initial || initialsOf(report.relationship.name)}
-          </div>
+          {pointImageFor(report.overall.score) ? (
+            <img className="report-avatar point-avatar" src={pointImageFor(report.overall.score)} alt="" />
+          ) : (
+            <div className="report-avatar" style={{ background: avatarGradientFor(report.relationship.id) }}>
+              {report.relationship.initial || initialsOf(report.relationship.name)}
+            </div>
+          )}
           <div>
             <div className="report-name">{report.relationship.name}</div>
             <span className="chip">{RELATIONSHIP_TYPE_LABELS[report.relationship.relationshipType]}</span>
@@ -233,20 +242,31 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
 
       <div className="evidence-row report-analysis">
         {report.evidences.length > 0 ? (
-          report.evidences.map((ev) => (
-            <div className="evidence-card" key={ev.id}>
+          report.evidences.map((ev) => {
+            const evidencePrqcIndex = PRQC_ORDER.indexOf(ev.component);
+            const isActive = evidencePrqcIndex >= 0 && activePrqcIndex === evidencePrqcIndex;
+            return (
+            <div
+              className={`evidence-card${isActive ? ' is-active' : ''}${activePrqcIndex !== null && evidencePrqcIndex !== activePrqcIndex ? ' is-dimmed' : ''}`}
+              key={ev.id}
+              tabIndex="0"
+              onMouseEnter={() => evidencePrqcIndex >= 0 && setActivePrqcIndex(evidencePrqcIndex)}
+              onMouseLeave={() => setActivePrqcIndex(null)}
+              onFocus={() => evidencePrqcIndex >= 0 && setActivePrqcIndex(evidencePrqcIndex)}
+              onBlur={() => setActivePrqcIndex(null)}
+            >
               <div className="evidence-top">
                 <QuoteIcon />
-                <span className="evidence-tag">관찰됨 · {PRQC_LABELS[ev.component] ?? ev.component}</span>
+                <span className="evidence-tag">{PRQC_LABELS[ev.component] ?? ev.component}</span>
               </div>
               <div className="evidence-text">{ev.summary}</div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="evidence-card positive">
             <div className="evidence-top">
               <QuoteIcon />
-              <span className="evidence-tag">관찰됨</span>
             </div>
             <div className="evidence-text">뚜렷한 위험 신호는 관찰되지 않았어요. 지금처럼 편안한 대화가 이어지고 있어요.</div>
           </div>

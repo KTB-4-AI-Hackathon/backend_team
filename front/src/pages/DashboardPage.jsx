@@ -6,6 +6,7 @@ import Astronaut from '../components/Astronaut';
 import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal';
 import { ChevronDownIcon, CheckIcon, PlusIcon, SparkleIcon, WarnIcon } from '../components/Icons';
 import { avatarGradientFor } from '../utils/avatar';
+import { pointImageFor } from '../utils/pointImage';
 import { RELATIONSHIP_TYPE_LABELS } from '../data/constants';
 import ufoImage from '../assets/images/UFO.png';
 import './Dashboard.css';
@@ -206,9 +207,7 @@ export default function DashboardPage() {
                     onClick={() => navigate(`/report/${p.id}`)}
                   >
                     <div className="person-top">
-                      <div className="avatar" style={{ background: avatarGradientFor(p.id) }}>
-                        {p.initial}
-                      </div>
+                      <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
                       <div>
                         <div className="person-name">{p.name}</div>
                         <span className="chip">{RELATIONSHIP_TYPE_LABELS[p.relationshipType]}</span>
@@ -241,9 +240,7 @@ export default function DashboardPage() {
                 return (
                   <div className="trend-row" key={p.relationshipId}>
                     <div className="trend-info">
-                      <div className="avatar" style={{ width: 28, height: 28, fontSize: 11, background: avatarGradientFor(p.relationshipId) }}>
-                        {p.name.slice(-2)}
-                      </div>
+                      <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
                       <div>
                         <div className="trend-name">{p.name}</div>
                         <div className={`score-delta ${up ? 'up' : 'down'}`} style={{ fontSize: 11.5 }}>
@@ -274,9 +271,7 @@ export default function DashboardPage() {
               {data.needsAttention.map((p) => (
                 <div className="warn-row" key={p.relationshipId}>
                   <div className="trend-info">
-                    <div className="avatar" style={{ width: 28, height: 28, fontSize: 11, background: avatarGradientFor(p.relationshipId) }}>
-                      {p.name.slice(-2)}
-                    </div>
+                    <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
                     <div>
                       <div className="trend-name">{p.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.reasonLabel}</div>

@@ -251,6 +251,11 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: radar-data-fill 500ms cubic-bezier(0.22, 0.9, 0.28, 1) 130ms both;
+  transition: opacity 180ms ease, stroke 180ms ease;
+}
+.radar-threshold {
+  opacity: 0.28;
+  transition: opacity 180ms ease;
 }
 .radar-point {
   transform-box: fill-box;
@@ -268,14 +273,29 @@
 }
 .radar-chart.has-active .radar-label:not(.is-active),
 .radar-chart.has-active .radar-point:not(.is-active) {
-  opacity: 0.36;
+  opacity: 0.1;
+}
+.radar-chart.has-active .radar-point:not(.is-active) {
+  animation-play-state: paused;
+  filter: none;
+}
+.radar-point.is-active {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(226, 160, 201, 1));
+}
+.radar-chart.has-active .radar-threshold,
+.radar-chart.has-active .radar-data-area {
+  opacity: 0.14;
+}
+.radar-chart.has-active .radar-threshold {
+  opacity: 0.42;
 }
 .radar-label.is-active {
   fill: var(--accent-pink);
   filter: drop-shadow(0 0 3px rgba(226, 160, 201, 0.65));
 }
 .radar-point.is-active {
-  filter: drop-shadow(0 0 5px rgba(226, 160, 201, 0.95));
+  filter: drop-shadow(0 0 6px rgba(226, 160, 201, 1));
 }
 .radar-focus-ring {
   fill: none;
@@ -364,6 +384,20 @@
   border: 1px solid var(--accent-amber-border);
   border-radius: var(--radius-card);
   padding: 16px 18px;
+  outline: none;
+  transition: opacity 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+.evidence-card[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-lavender);
+  outline-offset: 2px;
+}
+.evidence-card.is-dimmed {
+  opacity: 0.42;
+}
+.evidence-card.is-active {
+  border-color: rgba(226, 160, 201, 0.68);
+  background: linear-gradient(135deg, rgba(226, 160, 201, 0.16), rgba(165, 149, 232, 0.12));
+  box-shadow: 0 10px 26px -16px rgba(226, 160, 201, 0.8);
 }
 .evidence-card.positive {
   background: var(--accent-mint-soft);
