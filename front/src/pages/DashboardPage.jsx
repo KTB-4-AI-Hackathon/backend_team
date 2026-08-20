@@ -17,6 +17,14 @@ const SORT_OPTIONS = [
   { value: 'UPDATED_DESC', label: '최근 업데이트순' },
 ];
 
+const POINT_LEGEND = [
+  { score: 100, label: '100 ~ 80' },
+  { score: 70, label: '80 ~ 60' },
+  { score: 50, label: '60 ~ 40' },
+  { score: 30, label: '40 ~ 20' },
+  { score: 10, label: '20 ~ 0' },
+];
+
 function relativeTime(iso) {
   if (!iso) return '분석 대기 중';
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -192,6 +200,16 @@ export default function DashboardPage() {
           <div>
             <div className="panel-title-row">
               <span className="panel-title">등록된 인물 ({data.relationships.length})</span>
+              <div className="point-legend" aria-label="행성 이미지별 점수 구간">
+                <div className="point-legend-items">
+                  {POINT_LEGEND.map((item) => (
+                    <span className="point-legend-item" key={item.label} title={`${item.label}점`}>
+                      <img src={pointImageFor(item.score)} alt="" />
+                      <span>{item.label}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
               <div className="panel-controls">
                 <div className="sort-menu" ref={sortMenuRef}>
                   <button
