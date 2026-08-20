@@ -24,6 +24,47 @@
   opacity: 0.55;
   pointer-events: none;
 }
+.auth-constellation-stars circle {
+  filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.95))
+    drop-shadow(0 0 9px rgba(226, 160, 201, 0.6));
+  animation: constellation-glow 2.8s ease-in-out infinite;
+}
+.auth-constellation-stars circle:nth-child(2) {
+  animation-delay: -0.7s;
+}
+.auth-constellation-stars circle:nth-child(3) {
+  animation-delay: -1.4s;
+}
+.auth-constellation-stars circle:nth-child(4) {
+  animation-delay: -2.1s;
+}
+.auth-constellation-stars circle:nth-child(5) {
+  animation-delay: -0.35s;
+}
+.auth-constellation-stars circle:nth-child(6) {
+  animation-delay: -1.75s;
+}
+.auth-constellation-stars circle:nth-child(7) {
+  animation-delay: -1.05s;
+}
+.auth-constellation-stars circle:nth-child(8) {
+  animation-delay: -2.45s;
+}
+@keyframes constellation-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-constellation-stars circle {
+    animation: none;
+    opacity: 0.85;
+  }
+}
 .auth-hero-deco {
   position: absolute;
   right: -34px;

@@ -31,7 +31,7 @@ export default function LoginPage() {
             <line x1="240" y1="330" x2="200" y2="450" />
             <line x1="200" y1="450" x2="320" y2="500" />
           </g>
-          <g fill="rgba(244,240,251,0.55)">
+          <g className="auth-constellation-stars" fill="rgba(244,240,251,0.85)">
             <circle cx="60" cy="90" r="3" />
             <circle cx="160" cy="150" r="3.4" />
             <circle cx="280" cy="120" r="2.6" />
