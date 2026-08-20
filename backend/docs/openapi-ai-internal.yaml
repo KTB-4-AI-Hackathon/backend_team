@@ -54,14 +54,49 @@ paths:
                       name: 민지
                       relationshipType: FRIEND
                       status: ANALYZING
-                    checkIn:
-                      checkInId: 0198c8a7-3000-7000-8000-000000000004
-                      weekStart: "2026-08-17"
-                      answers:
-                        - questionCode: RELATIONSHIP_FEELING
-                          score: 6
-                        - questionCode: CONVERSATION_COMFORT
-                          score: 4
+                    current:
+                      conversationFileId: 0198c8a7-3000-7000-8000-000000000004
+                      checkIn:
+                        checkInId: 0198c8a7-3000-7000-8000-000000000005
+                        weekStart: "2026-08-17"
+                        inputAt: "2026-08-17T01:00:00Z"
+                        answers:
+                          - questionCode: RELATIONSHIP_FEELING
+                            score: 6
+                          - questionCode: CONVERSATION_COMFORT
+                            score: 4
+                    history:
+                      - inputAt: "2026-08-10T01:00:00Z"
+                        conversation:
+                          conversationFileId: 0198c8a7-3000-7000-8000-000000000006
+                          messages:
+                            - sender: SELF
+                              sentAt: "2026-08-09T12:00:00Z"
+                              text: 지난 대화 내용
+                        checkIn:
+                          checkInId: 0198c8a7-3000-7000-8000-000000000007
+                          weekStart: "2026-08-10"
+                          inputAt: "2026-08-10T01:00:00Z"
+                          answers:
+                            - questionCode: RELATIONSHIP_FEELING
+                              score: 4
+                        analysis:
+                          reportId: 0198c8a7-3000-7000-8000-000000000008
+                          analyzedAt: "2026-08-10T01:02:00Z"
+                          overallScore: 58
+                          scoreChange: -7
+                          prqc:
+                            satisfaction: 55
+                            commitment: 56
+                            intimacy: 57
+                            trust: 58
+                            passion: 59
+                            love: 60
+                          evidences:
+                            - component: trust
+                              score: 58
+                              summary: 응답 간격이 길어졌어요.
+                              metric: null
                   conversation:
                     url: https://storage.example.com/private/conversation?signature=redacted
                     format: NORMALIZED_NDJSON_GZIP
@@ -96,14 +131,49 @@ paths:
                       name: 민지
                       relationshipType: FRIEND
                       status: ANALYZING
-                    checkIn:
-                      checkInId: 0198c8a7-3000-7000-8000-000000000004
-                      weekStart: "2026-08-17"
-                      answers:
-                        - questionCode: RELATIONSHIP_FEELING
-                          score: 6
-                        - questionCode: CONVERSATION_COMFORT
-                          score: 4
+                    current:
+                      conversationFileId: 0198c8a7-3000-7000-8000-000000000004
+                      checkIn:
+                        checkInId: 0198c8a7-3000-7000-8000-000000000005
+                        weekStart: "2026-08-17"
+                        inputAt: "2026-08-17T01:00:00Z"
+                        answers:
+                          - questionCode: RELATIONSHIP_FEELING
+                            score: 6
+                          - questionCode: CONVERSATION_COMFORT
+                            score: 4
+                    history:
+                      - inputAt: "2026-08-10T01:00:00Z"
+                        conversation:
+                          conversationFileId: 0198c8a7-3000-7000-8000-000000000006
+                          messages:
+                            - sender: SELF
+                              sentAt: "2026-08-09T12:00:00Z"
+                              text: 지난 대화 내용
+                        checkIn:
+                          checkInId: 0198c8a7-3000-7000-8000-000000000007
+                          weekStart: "2026-08-10"
+                          inputAt: "2026-08-10T01:00:00Z"
+                          answers:
+                            - questionCode: RELATIONSHIP_FEELING
+                              score: 4
+                        analysis:
+                          reportId: 0198c8a7-3000-7000-8000-000000000008
+                          analyzedAt: "2026-08-10T01:02:00Z"
+                          overallScore: 58
+                          scoreChange: -7
+                          prqc:
+                            satisfaction: 55
+                            commitment: 56
+                            intimacy: 57
+                            trust: 58
+                            passion: 59
+                            love: 60
+                          evidences:
+                            - component: trust
+                              score: 58
+                              summary: 응답 간격이 길어졌어요.
+                              metric: null
                   file: conversation.ndjson.gz
       responses:
         "200":
@@ -392,14 +462,23 @@ components:
     AnalysisContext:
       type: object
       additionalProperties: false
-      required: [user, relationship, checkIn]
+      description: |
+        현재 분석 스냅샷과 과거 분석 이력을 전달하는 맥락이다. 현재 대화 전체는
+        multipart file 또는 conversation 참조에 담고, history는 check-in 입력 시각
+        inputAt 오름차순으로 전달한다.
+      required: [user, relationship, current, history]
       properties:
         user:
           $ref: "#/components/schemas/AnalysisUserContext"
         relationship:
           $ref: "#/components/schemas/AnalysisRelationshipContext"
-        checkIn:
-          $ref: "#/components/schemas/AnalysisCheckInContext"
+        current:
+          $ref: "#/components/schemas/CurrentAnalysisContext"
+        history:
+          type: array
+          description: 현재 체크인보다 이전인 성공 분석 이력. 오래된 입력부터 정렬한다.
+          items:
+            $ref: "#/components/schemas/HistoricalAnalysisContext"
     AnalysisUserContext:
       type: object
       additionalProperties: false
@@ -436,7 +515,7 @@ components:
     AnalysisCheckInContext:
       type: object
       additionalProperties: false
-      required: [checkInId, weekStart, answers]
+      required: [checkInId, weekStart, inputAt, answers]
       properties:
         checkInId:
           type: string
@@ -444,11 +523,95 @@ components:
         weekStart:
           type: string
           format: date
+        inputAt:
+          type: string
+          format: date-time
+          description: 사용자가 이 체크인 점수를 최초 입력한 시각
         answers:
           type: array
           minItems: 1
           items:
             $ref: "#/components/schemas/CheckInAnswerContext"
+    CurrentAnalysisContext:
+      type: object
+      additionalProperties: false
+      required: [conversationFileId, checkIn]
+      properties:
+        conversationFileId:
+          type: string
+          format: uuid
+          description: multipart file 또는 conversation 참조로 전달한 현재 대화의 식별자
+        checkIn:
+          $ref: "#/components/schemas/AnalysisCheckInContext"
+    HistoricalAnalysisContext:
+      type: object
+      additionalProperties: false
+      required: [inputAt, conversation, checkIn, analysis]
+      properties:
+        inputAt:
+          type: string
+          format: date-time
+          description: 과거 체크인 최초 입력 시각. history 정렬의 기준값
+        conversation:
+          $ref: "#/components/schemas/HistoricalConversationContext"
+        checkIn:
+          $ref: "#/components/schemas/AnalysisCheckInContext"
+        analysis:
+          $ref: "#/components/schemas/PreviousAnalysisContext"
+    HistoricalConversationContext:
+      type: object
+      additionalProperties: false
+      required: [conversationFileId, messages]
+      properties:
+        conversationFileId:
+          type: string
+          format: uuid
+        messages:
+          type: array
+          description: 해당 이전 분석에서 사용한 정규화 대화 전체
+          items:
+            $ref: "#/components/schemas/HistoricalConversationMessage"
+    HistoricalConversationMessage:
+      type: object
+      additionalProperties: false
+      required: [sender, sentAt, text]
+      properties:
+        sender:
+          type: string
+          enum: [SELF, OTHER]
+        sentAt:
+          type: string
+          format: date-time
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+    PreviousAnalysisContext:
+      type: object
+      additionalProperties: false
+      required: [reportId, analyzedAt, overallScore, scoreChange, prqc, evidences]
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        analyzedAt:
+          type: string
+          format: date-time
+        overallScore:
+          $ref: "#/components/schemas/Score"
+        scoreChange:
+          type: [integer, "null"]
+          minimum: -100
+          maximum: 100
+        prqc:
+          $ref: "#/components/schemas/PrqcComponents"
+        evidences:
+          type: array
+          description: 이전 AI 분석 글로 사용하는 저장 근거 문장
+          minItems: 1
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/Evidence"
     CheckInAnswerContext:
       type: object
       additionalProperties: false
