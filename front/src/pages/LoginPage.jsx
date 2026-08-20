@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { INTRO_PLAYED_KEY } from '../intro/IntroPage';
+import { hasIntroPlayed } from '../intro/IntroPage';
 import { LogoMark, KakaoIcon, SparkleIcon, CheckIcon, ChatIcon } from '../components/Icons';
 import Moon from '../components/Moon';
 import Astronaut from '../components/Astronaut';
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'checking' || isLoggedIn) return;
-    if (sessionStorage.getItem(INTRO_PLAYED_KEY) !== 'true') navigate('/intro', { replace: true });
+    if (!hasIntroPlayed()) navigate('/intro', { replace: true });
   }, [status, isLoggedIn, navigate]);
 
   if (status === 'checking' || isLoggedIn) return null;
