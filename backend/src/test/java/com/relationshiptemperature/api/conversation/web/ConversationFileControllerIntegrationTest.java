@@ -131,6 +131,55 @@ class ConversationFileControllerIntegrationTest {
     }
 
     @Test
+    void storesOnlyNewMessagesWhenUploadingExtendedConversationExport() throws Exception {
+        User user = saveUser("conversation-extended");
+        Relationship relationship = saveRelationship(user, "추가 대화");
+        upload(user, relationship, file("first.csv", "text/csv", csv()));
+
+        mockMvc.perform(multipart("/api/v1/relationships/{id}/conversation-files", relationship.getId())
+                        .file(file("second.csv", "text/csv", extendedCsv()))
+                        .param("source", "KAKAO_TALK")
+                        .param("selfParticipantName", "민지")
+                        .with(authentication(oauthAuthentication(user)))
+                        .with(csrf()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.messageCount").value(1));
+
+        var files = fileRepository.findAll();
+        assertThat(files).hasSize(2);
+        var secondFile = files.stream()
+                .filter(item -> item.getOriginalFileName().equals("second.csv"))
+                .findFirst()
+                .orElseThrow();
+        List<ConversationMessage> secondMessages = messageRepository
+                .findAllByConversationFileIdOrderBySequenceNumberAsc(secondFile.getId());
+        assertThat(secondMessages).hasSize(1);
+        assertThat(secondMessages.getFirst().getSequenceNumber()).isEqualTo(2);
+        assertThat(secondMessages.getFirst().getSenderName()).isEqualTo("민지");
+        assertThat(secondMessages.getFirst().getContent()).isEqualTo("추가 메시지");
+        assertThat(messageRepository.findAll()).hasSize(3);
+    }
+
+    @Test
+    void rejectsExtendedUploadWhenItContainsNoNewMessages() throws Exception {
+        User user = saveUser("conversation-no-new");
+        Relationship relationship = saveRelationship(user, "새 메시지 없음");
+        upload(user, relationship, file("first.csv", "text/csv", csv()));
+
+        mockMvc.perform(multipart("/api/v1/relationships/{id}/conversation-files", relationship.getId())
+                        .file(file("renamed.csv", "text/csv", csv()))
+                        .param("source", "KAKAO_TALK")
+                        .param("selfParticipantName", "민지")
+                        .with(authentication(oauthAuthentication(user)))
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("DUPLICATE_CONVERSATION_FILE"));
+
+        assertThat(fileRepository.findAll()).hasSize(1);
+        assertThat(messageRepository.findAll()).hasSize(2);
+    }
+
+    @Test
     void rejectsSelfParticipantMismatchWithoutPersisting() throws Exception {
         User user = saveUser("conversation-self-mismatch");
         Relationship relationship = saveRelationship(user, "이름 불일치");
@@ -206,6 +255,13 @@ class ConversationFileControllerIntegrationTest {
         return "Date,User,Message\n"
                 + "2026-08-19 10:00:00,민지,안녕\n"
                 + "2026-08-19 10:01:00,준호,반가워\n";
+    }
+
+    private String extendedCsv() {
+        return "Date,User,Message\n"
+                + "2026-08-19 10:00:00,민지,안녕\n"
+                + "2026-08-19 10:01:00,준호,반가워\n"
+                + "2026-08-19 10:02:00,민지,추가 메시지\n";
     }
 
     private String txt() {

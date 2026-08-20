@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +78,13 @@ public class ConversationFileService {
                 deleteStored(stored.storageKey());
                 throw exception;
             }
+            List<ParsedConversation.ParsedMessage> newMessages = filterAlreadyStoredMessages(
+                    relationshipId, parsed.messages()
+            );
+            if (newMessages.isEmpty()) {
+                deleteStored(stored.storageKey());
+                throw new ApiException(ErrorCode.DUPLICATE_CONVERSATION_FILE);
+            }
 
             ConversationFile file = new ConversationFile(
                     userId,
@@ -86,9 +96,9 @@ public class ConversationFileService {
                     Instant.now().plus(properties.retention().rawConversation())
             );
             file.participants(parsed.selfParticipantName(), parsed.otherParticipantName());
-            file.validated(parsed.messages().size(), parsed.messages().getFirst().sentAt(), parsed.messages().getLast().sentAt());
+            file.validated(newMessages.size(), newMessages.getFirst().sentAt(), newMessages.getLast().sentAt());
             fileRepository.save(file);
-            messageRepository.saveAll(parsed.messages().stream()
+            messageRepository.saveAll(newMessages.stream()
                     .map(message -> new ConversationMessage(
                             file.getId(), relationshipId, message.sequenceNumber(), message.sentAt(),
                             message.senderName(), message.role(), message.content()
@@ -179,4 +189,23 @@ public class ConversationFileService {
         int index = name.lastIndexOf('.');
         return index < 0 ? "" : name.substring(index + 1).toLowerCase(Locale.ROOT);
     }
+
+    private List<ParsedConversation.ParsedMessage> filterAlreadyStoredMessages(
+            UUID relationshipId,
+            List<ParsedConversation.ParsedMessage> parsedMessages
+    ) {
+        Set<MessageFingerprint> existing = new HashSet<>();
+        messageRepository.findAllByRelationshipId(relationshipId).forEach(message ->
+                existing.add(new MessageFingerprint(
+                        message.getSentAt(), message.getSenderName(), message.getContent()
+                ))
+        );
+        return parsedMessages.stream()
+                .filter(message -> !existing.contains(new MessageFingerprint(
+                        message.sentAt(), message.senderName(), message.content()
+                )))
+                .toList();
+    }
+
+    private record MessageFingerprint(Instant sentAt, String senderName, String content) {}
 }
