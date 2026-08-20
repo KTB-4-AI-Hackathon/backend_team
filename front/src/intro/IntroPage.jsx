@@ -6,6 +6,8 @@ import { LogoMark } from '../components/Icons';
 import StageStack from './parts/StageStack';
 import Scene01Login from './scenes/Scene01Login';
 import Scene02Dashboard from './scenes/Scene02Dashboard';
+import Scene03Form from './scenes/Scene03Form';
+import Scene04Upload from './scenes/Scene04Upload';
 import './intro.css';
 
 export const INTRO_PLAYED_KEY = 'introPlayed';
@@ -15,8 +17,8 @@ const Ph = ({ label }) => <div className="intro-ph">{label}</div>;
 const SCENES = [
   { id: 'login', dur: 1000, stage: null, Comp: Scene01Login },
   { id: 'dashboard', dur: 1000, stage: null, Comp: Scene02Dashboard },
-  { id: 'form', dur: 1200, stage: '인물 등록', Comp: () => <Ph label="form" /> },
-  { id: 'upload', dur: 1300, stage: '대화 업로드', Comp: () => <Ph label="upload" /> },
+  { id: 'form', dur: 1200, stage: '인물 등록', Comp: Scene03Form },
+  { id: 'upload', dur: 1300, stage: '대화 업로드', Comp: Scene04Upload },
   { id: 'checkin', dur: 800, stage: '체크인', Comp: () => <Ph label="checkin" /> },
   { id: 'analysis', dur: 1200, stage: 'AI 분석', Comp: () => <Ph label="analysis" /> },
   { id: 'report', dur: 900, stage: '리포트', Comp: () => <Ph label="report" /> },
