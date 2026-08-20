@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon } from './Icons';
+import userLogo from '../assets/images/UserLogo.png';
 import wordmark from '../assets/images/wouldu-wordmark.png';
 import './AppLayout.css';
 
@@ -73,13 +74,15 @@ export default function AppLayout() {
 
         <div className="sidebar-spacer" />
         <div className="profile">
-          <div className="profile-avatar">{(user?.displayName || '우')[0]}</div>
+          <div className="profile-avatar user-logo-frame">
+            <img className="user-logo-image" src={userLogo} alt="사용자 프로필" />
+          </div>
           <div className="profile-text" style={{ flex: 1, minWidth: 0 }}>
             <div className="profile-name">{user?.displayName || '우주인'}님</div>
-            <button className="profile-sub" onClick={handleLogout}>
-              로그아웃
-            </button>
           </div>
+          <button className="profile-logout" onClick={handleLogout}>
+            로그아웃
+          </button>
         </div>
       </aside>
 

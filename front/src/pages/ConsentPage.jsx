@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CheckIcon, InfoIcon } from '../components/Icons';
+import userLogo from '../assets/images/UserLogo.png';
 import './Auth.css';
 
 const REQUIRED_KEYS = ['terms', 'privacy', 'data'];
@@ -46,16 +47,8 @@ export default function ConsentPage() {
         <div className="consent-title">거의 다 됐어요</div>
 
         <div className="consent-profile">
-          <div
-            className="avatar"
-            style={{
-              width: 40,
-              height: 40,
-              fontSize: 15,
-              background: 'radial-gradient(circle at 32% 28%, #efe3ff, #a595e8 60%, #6f5cc4)',
-            }}
-          >
-            {(user?.displayName || '우')[0]}
+          <div className="avatar user-logo-frame consent-profile-avatar">
+            <img className="user-logo-image" src={userLogo} alt="사용자 프로필" />
           </div>
           <div>
             <div className="consent-profile-name">{user?.displayName || '우주인'}님</div>

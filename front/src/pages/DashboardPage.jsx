@@ -151,11 +151,6 @@ export default function DashboardPage() {
             <SparkleIcon className="spark" style={{ width: 14, height: 14 }} /> 끝없는 관계의 우주 속, 당신에게
           </p>
         </div>
-        <button className="btn btn-primary" onClick={openModal}>
-          <PlusIcon />
-          새 인물 등록
-        </button>
-
         <div className="hero-deco" aria-hidden="true">
           <div className="moon-slot">
             <Moon />
@@ -197,41 +192,47 @@ export default function DashboardPage() {
           <div>
             <div className="panel-title-row">
               <span className="panel-title">등록된 인물 ({data.relationships.length})</span>
-              <div className="sort-menu" ref={sortMenuRef}>
-                <button
-                  type="button"
-                  className="sort-trigger"
-                  aria-haspopup="menu"
-                  aria-expanded={isSortMenuOpen}
-                  aria-controls="relationship-sort-menu"
-                  onClick={() => setIsSortMenuOpen((open) => !open)}
-                >
-                  <span>{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
-                  <ChevronDownIcon className="sort-trigger-icon" />
+              <div className="panel-controls">
+                <div className="sort-menu" ref={sortMenuRef}>
+                  <button
+                    type="button"
+                    className="sort-trigger"
+                    aria-haspopup="menu"
+                    aria-expanded={isSortMenuOpen}
+                    aria-controls="relationship-sort-menu"
+                    onClick={() => setIsSortMenuOpen((open) => !open)}
+                  >
+                    <span>{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
+                    <ChevronDownIcon className="sort-trigger-icon" />
+                  </button>
+                  {isSortMenuOpen && (
+                    <div id="relationship-sort-menu" className="sort-options" role="menu" aria-label="인물 정렬">
+                      {SORT_OPTIONS.map((option) => {
+                        const selected = option.value === sort;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={`sort-option${selected ? ' selected' : ''}`}
+                            role="menuitemradio"
+                            aria-checked={selected}
+                            onClick={() => {
+                              setSort(option.value);
+                              setIsSortMenuOpen(false);
+                            }}
+                          >
+                            <span>{option.label}</span>
+                            {selected && <CheckIcon aria-hidden="true" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <button className="btn btn-primary" onClick={openModal}>
+                  <PlusIcon />
+                  새 인물 등록
                 </button>
-                {isSortMenuOpen && (
-                  <div id="relationship-sort-menu" className="sort-options" role="menu" aria-label="인물 정렬">
-                    {SORT_OPTIONS.map((option) => {
-                      const selected = option.value === sort;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`sort-option${selected ? ' selected' : ''}`}
-                          role="menuitemradio"
-                          aria-checked={selected}
-                          onClick={() => {
-                            setSort(option.value);
-                            setIsSortMenuOpen(false);
-                          }}
-                        >
-                          <span>{option.label}</span>
-                          {selected && <CheckIcon aria-hidden="true" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -245,10 +246,12 @@ export default function DashboardPage() {
                     onClick={() => navigate(`/report/${p.id}`)}
                   >
                     <div className="person-top">
-                      <img className="avatar point-avatar small-point-avatar" src={pointImageFor(p.score)} alt="" />
+                      <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
                       <div>
-                        <div className="person-name">{p.name}</div>
-                        <span className="chip">{RELATIONSHIP_TYPE_LABELS[p.relationshipType]}</span>
+                        <div className="person-name-row">
+                          <div className="person-name">{p.name}</div>
+                          <span className="chip">{RELATIONSHIP_TYPE_LABELS[p.relationshipType]}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="person-score-row">
@@ -278,7 +281,7 @@ export default function DashboardPage() {
                 return (
                   <div className="trend-row" key={p.relationshipId}>
                     <div className="trend-info">
-                      <img className="avatar point-avatar" src={pointImageFor(p.score)} alt="" />
+                      <img className="avatar point-avatar small-point-avatar" src={pointImageFor(p.score)} alt="" />
                       <div>
                         <div className="trend-name">{p.name}</div>
                         <div className={`score-delta ${up ? 'up' : 'down'}`} style={{ fontSize: 11.5 }}>
