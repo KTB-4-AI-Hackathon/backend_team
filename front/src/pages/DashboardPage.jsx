@@ -25,6 +25,36 @@ function relativeTime(iso) {
   return `${days}일 전`;
 }
 
+function Sparkline({ id, data, width = 64, height = 24, color }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const pad = 3;
+  const points = data.map((v, i) => {
+    const x = pad + (i * (width - 2 * pad)) / (data.length - 1);
+    const y = height - pad - (max === min ? 0.5 : (v - min) / (max - min)) * (height - 2 * pad);
+    return [x, y];
+  });
+  const line = points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const first = points[0];
+  const last = points[points.length - 1];
+  const area = `${line} L${last[0].toFixed(1)},${height} L${first[0].toFixed(1)},${height} Z`;
+  const gradientId = `spark-${id}`;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity="0.35" />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradientId})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0].toFixed(1)} cy={last[1].toFixed(1)} r="2.4" fill={color} />
+    </svg>
+  );
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { open, openModal, closeModal } = useNewPersonModal();
@@ -168,6 +198,15 @@ export default function DashboardPage() {
                           {up ? '▲' : '▼'} {Math.abs(p.change ?? 0)}
                         </div>
                       </div>
+                    </div>
+                    <div className="trend-spark">
+                      <Sparkline
+                        id={p.relationshipId}
+                        data={p.sparkline}
+                        width={64}
+                        height={24}
+                        color={up ? '#7fd9b6' : '#e2896f'}
+                      />
                     </div>
                   </div>
                 );
