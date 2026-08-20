@@ -49,17 +49,23 @@ class KakaoCsvConversationParserTest {
     }
 
     @Test
-    void rejectsCsvRowsWithEmptyMessageContent() {
+    void skipsCsvRowsWithEmptyMessageContent() throws Exception {
         String content = """
                 Date,User,Message
                 2026-08-19 19:23:00,강명진,안녕
                 2026-08-19 19:24:00,이진우,\"\"
+                2026-08-19 19:25:00,이진우,\"   \"
+                2026-08-19 19:26:00,이진우,반가워
                 """;
 
-        assertThatThrownBy(() -> parser.parse(input(content), "강명진"))
-                .isInstanceOf(ApiException.class)
-                .extracting(exception -> ((ApiException) exception).errorCode())
-                .isEqualTo(ErrorCode.INVALID_KAKAO_EXPORT);
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.messages()).extracting(
+                message -> message.sequenceNumber(), message -> message.content()
+        ).containsExactly(
+                org.assertj.core.groups.Tuple.tuple(0, "안녕"),
+                org.assertj.core.groups.Tuple.tuple(1, "반가워")
+        );
     }
 
     @Test
@@ -90,6 +96,130 @@ class KakaoCsvConversationParserTest {
     }
 
     @Test
+    void skipsTitleRowsBeforeHeader() throws Exception {
+        String content = """
+                카카오톡 대화 내보내기
+                저장한 날짜 : 2026-08-19 20:00:00
+
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.otherParticipantName()).isEqualTo("이진우");
+        assertThat(parsed.messages()).hasSize(2);
+        assertThat(parsed.messages().getFirst().sequenceNumber()).isZero();
+    }
+
+    @Test
+    void skipsTitleRowsThatContainCommas() throws Exception {
+        String content = """
+                강명진, 이진우 님의 대화,,
+                ,,
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.messages()).hasSize(2);
+    }
+
+    @Test
+    void parsesHeaderOnFirstRowWithoutPreamble() throws Exception {
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        assertThat(parser.parse(input(content), "강명진").messages()).hasSize(2);
+    }
+
+    @Test
+    void rejectsCsvWithoutHeaderRow() {
+        assertInvalidCsv("""
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """);
+    }
+
+    @Test
+    void rejectsCsvWhenHeaderAppearsAfterPreambleLimit() {
+        StringBuilder content = new StringBuilder();
+        for (int index = 0; index < 25; index++) {
+            content.append("제목 줄 ").append(index).append('\n');
+        }
+        content.append("""
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                """);
+
+        assertInvalidCsv(content.toString());
+    }
+
+    @Test
+    void skipsRowsWithoutSender() throws Exception {
+        // 카카오톡 내보내기는 삭제된 메시지를 Date·User 가 빈 행으로 남긴다.
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                ,,메시지가 삭제되었습니다.
+                ,,메시지가 삭제되었습니다.
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.otherParticipantName()).isEqualTo("이진우");
+        assertThat(parsed.messages()).extracting(
+                message -> message.sequenceNumber(),
+                message -> message.senderName(),
+                message -> message.content()
+        ).containsExactly(
+                org.assertj.core.groups.Tuple.tuple(0, "강명진", "안녕"),
+                org.assertj.core.groups.Tuple.tuple(1, "이진우", "반가워")
+        );
+    }
+
+    @Test
+    void skippedRowsDoNotCountAsThirdParticipant() throws Exception {
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                ,,메시지가 삭제되었습니다.
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        assertThat(parser.parse(input(content), "강명진").messages()).hasSize(2);
+    }
+
+    @Test
+    void skipsRowsWhoseSenderIsOnlyWhitespace() throws Exception {
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:23:30,"   ",삭제된 메시지
+                2026-08-19 19:24:00,이진우,반가워
+                """;
+
+        assertThat(parser.parse(input(content), "강명진").messages()).hasSize(2);
+    }
+
+    @Test
+    void stillRejectsRowsThatHaveSenderButBrokenDate() {
+        assertInvalidCsv("""
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                ,이진우,날짜가 없다
+                """);
+    }
+
+    @Test
     void routesCsvInputByExtension() throws Exception {
         ConversationParserRouter router = new ConversationParserRouter(
                 new KakaoCsvConversationParser(), new BasicKakaoConversationParser()
@@ -104,6 +234,21 @@ class KakaoCsvConversationParserTest {
 
         assertThat(parsed.messages()).hasSize(2);
         assertThat(parsed.messages().getFirst().role()).isEqualTo(ConversationParticipantRole.SELF);
+    }
+
+    @Test
+    void ignoresStrayVariationSelectorAfterHangulName() throws Exception {
+        String content = """
+                Date,User,Message
+                2026-08-19 19:23:00,강명진,안녕
+                2026-08-19 19:24:00,이진우,반가워
+                2026-08-19 19:25:00,이진우\uFE0F,또 왔어
+                """;
+
+        var parsed = parser.parse(input(content), "강명진");
+
+        assertThat(parsed.otherParticipantName()).isEqualTo("이진우");
+        assertThat(parsed.messages()).hasSize(3);
     }
 
     private ByteArrayInputStream input(String content) {

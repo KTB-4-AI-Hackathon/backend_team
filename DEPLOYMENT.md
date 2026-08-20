@@ -104,8 +104,14 @@ map $http_x_forwarded_proto $client_proto {
 
 | 방향 | 포트 | 소스 |
 |---|---|---|
-| 인바운드 | 80 | `0.0.0.0/0` |
-| 인바운드 | 443 | `0.0.0.0/0` |
+| 인바운드 | 80 | `0.0.0.0/0` (Anywhere-IPv4) |
+| 인바운드 | 443 | `0.0.0.0/0` (Anywhere-IPv4) |
+
+> **규칙 추가 화면에서 소스 드롭다운의 기본값은 "내 IP(My IP)"입니다.** 그대로 저장하면
+> `x.x.x.x/32`가 되어 **본인 네트워크에서만 접속되고 팀원·심사위원은 전부 못 들어옵니다.**
+> 브라우저에서는 잘 되는데 다른 사람은 "연결할 수 없음"이 뜬다면 이것부터 확인하세요.
+
+아웃바운드는 기본값(모든 트래픽 허용) 그대로 둡니다. 여기를 막으면 ALB가 EC2로 보내지 못합니다.
 
 **`ec2-sg`** (EC2에 부착)
 
@@ -118,18 +124,64 @@ map $http_x_forwarded_proto $client_proto {
 
 ### 3-3. 대상 그룹 (Target Group)
 
+**대상 그룹은 하나면 됩니다.** 프론트/백엔드를 나눠 두 개를 만들 필요가 없습니다.
+
 | 항목 | 값 |
 |---|---|
 | 대상 유형 | Instances |
 | 프로토콜 / 포트 | HTTP / **80** |
 | 상태 검사 경로 | **`/healthz`** |
+| 상태 검사 포트 | 트래픽 포트(Traffic port) |
 | 성공 코드 | 200 |
 | 정상 임계값 | 2 |
 | 간격 | 30초 |
 
-`/healthz`는 nginx가 백엔드의 `/actuator/health`로 프록시하는 경로라, **백엔드가 죽으면 ALB도 비정상으로 인식**합니다.
+#### 포트는 반드시 80
 
-> 트레이드오프: EC2가 1대뿐이라 백엔드 장애 시 정적 페이지까지 503이 됩니다. 데모 중 화면만이라도 뜨는 편이 낫다면 상태 검사 경로를 `/`로 바꾸세요. 대신 백엔드 장애를 ALB가 알아채지 못합니다.
+nginx가 호스트 80에서 듣습니다. **3000이나 8080으로 만들면 상태 검사가 100% 실패**하고
+ALB가 503을 돌려줍니다. 3000은 Next.js/CRA의 기본 포트라 습관적으로 넣기 쉬운데,
+이 프로젝트는 Vite라 개발 포트가 5173이고 배포에서는 nginx가 80입니다.
+
+> **대상 그룹의 프로토콜·포트는 생성 후 수정할 수 없습니다.** (상태 검사 설정은 수정 가능)
+> 이미 잘못 만들었다면 둘 중 하나로 고칩니다.
+>
+> - **대상만 다시 등록**: Targets 탭 → 인스턴스 **Deregister** → **Register targets** →
+>   인스턴스 선택 → *Ports for the selected instances* 에 **`80`** → Include as pending → Register
+> - **새로 생성**: HTTP:80 대상 그룹을 만들고 443 리스너의 Forward 대상을 교체
+
+#### 백엔드용 대상 그룹(8080)을 만들지 마세요
+
+`compose.prod.yaml`이 backend·postgres·mongo의 호스트 포트를 걷어내기 때문에,
+**EC2 호스트의 8080에는 아무도 듣고 있지 않습니다.** 8080짜리 대상 그룹은 영원히 unhealthy입니다.
+
+```bash
+# EC2에서 확인
+sudo ss -tlnp | grep -E ':80|:8080'      # 80만 나오고 8080은 없다
+curl -s -m 5 localhost:8080/actuator/health   # 연결 실패가 정상
+```
+
+경로 분기는 **ALB가 아니라 nginx가** 합니다.
+
+```
+                                    ┌─ /api/*    ─▶ backend:8080  (도커 내부)
+브라우저 ─https─▶ ALB ─80─▶ nginx ──┼─ /oauth2/* ─▶ backend:8080  (도커 내부)
+                  │                 └─ 그 외      ─▶ 정적 파일
+            대상 그룹 1개
+             HTTP:80
+```
+
+ALB 입장에서 EC2는 "80번 포트짜리 웹서버 하나"일 뿐입니다.
+
+#### 상태 검사 경로 선택
+
+`/healthz`는 nginx가 백엔드의 `/actuator/health`로 프록시하는 경로라, 200이면 **nginx와 backend가 모두 살아 있다**는 뜻입니다.
+
+| 경로 | 백엔드 장애 시 | 언제 |
+|---|---|---|
+| `/healthz` | 사이트 전체 503 | 정확한 상태 파악. **기본 권장** |
+| `/` | 화면은 뜨고 API만 실패 | 데모 중 "화면이라도 떠야" 할 때 |
+
+EC2가 1대뿐이라 `/healthz`는 백엔드 장애 시 정적 페이지까지 503이 됩니다. 시연 직전이라면 `/`도 합리적인 선택입니다.
 
 ### 3-4. ALB
 
@@ -143,10 +195,28 @@ map $http_x_forwarded_proto $client_proto {
 
 **리스너 2개**
 
-| 리스너 | 동작 |
-|---|---|
-| HTTPS : 443 | ACM 인증서 선택 → 위 대상 그룹으로 **전달(Forward)** |
-| HTTP : 80 | **HTTPS로 리디렉션** (301, 포트 443) |
+| 리스너 | 동작 | 대상 그룹 |
+|---|---|---|
+| HTTPS : 443 | ACM 인증서 선택 → **전달(Forward)** | HTTP:80 대상 그룹 |
+| HTTP : 80 | **HTTPS로 리디렉션** (301, 포트 443) | **연결하지 않음** |
+
+**HTTP:80 리스너는 지우지 마세요.** 사용자가 주소창에 도메인만 치면 브라우저는 `http://`로 먼저
+시도합니다. 80 리스너가 없으면 "사이트에 연결할 수 없음"이 뜨고, `https://`를 직접 입력한 사람만
+들어올 수 있습니다.
+
+**80 리스너에 대상 그룹을 붙이면 안 됩니다.** 평문으로 서비스가 노출될 뿐 아니라, 그 경로로 들어온
+요청은 `X-Forwarded-Proto: http`가 되어 카카오 `redirect_uri`가 `http://`로 만들어져 KOE006이 납니다.
+
+> 헷갈리기 쉬운 지점: **대상 그룹의 `HTTP:80`은 ALB→EC2 구간**이고, **리스너의 `HTTP:80`은
+> 브라우저→ALB 구간**입니다. 이름만 같고 완전히 다른 구간입니다.
+
+**443 리스너에 `/api/*` → 별도 대상 그룹 같은 경로 기반 규칙을 만들지 마세요.** 기본 규칙 하나로
+전부 nginx에 넘기면 됩니다. 경로 규칙이 남아 있으면 화면은 떠도 **API 호출만 503**이 나서
+로그인이 되지 않습니다.
+
+```
+IF  기본(default)  →  THEN  Forward to  <HTTP:80 대상 그룹>
+```
 
 **속성에서 유휴 시간 초과(Idle timeout)를 `180`초로 올리세요.** 기본값 60초로는 상담 SSE 스트림이 끊깁니다 (아래 6-3 참고).
 
@@ -161,7 +231,10 @@ map $http_x_forwarded_proto $client_proto {
 | 별칭(Alias) | 예 |
 | 대상 | Application Load Balancer → `ap-northeast-2` → 생성한 ALB |
 
-`www`도 쓸 거라면 같은 방식으로 A(Alias) 레코드를 하나 더 만듭니다.
+`www`는 **레코드를 만들지 않으면 아예 해석되지 않습니다.** apex 도메인만 등록한 상태에서
+`www.` 를 붙여 접속하면 DNS 응답이 없어 연결 실패합니다. `www`도 쓰려면 A(Alias) 레코드를
+하나 더 만들고, **ACM 인증서에도 `www.` 를 대체 도메인 이름으로 포함**시켜야 합니다
+(인증서에 없으면 TLS 경고가 뜹니다).
 
 ```bash
 # 전환 확인 (ALB의 IP로 바뀌어야 한다. EC2 퍼블릭 IP가 나오면 아직 반영 전)
@@ -406,8 +479,27 @@ curl -s -o /dev/null -w '%{redirect_url}\n' \
 curl -sI https://ktb-ai-hackathon-team14.com/oauth2/authorization/kakao | grep -i set-cookie
 # → rt_session=...; Path=/; Secure; HttpOnly; SameSite=Lax
 
-# 8) 브라우저로 실제 로그인
+# 8) 로그인 진입점이 통과하는가  ← FRONTEND_BASE_URL 불일치를 잡아내는 검사
+curl -s -o /dev/null -w '%{http_code}\n' \
+  "https://ktb-ai-hackathon-team14.com/api/v1/auth/kakao/authorize?redirectUri=https%3A%2F%2Fktb-ai-hackathon-team14.com"
+# → 302 여야 정상.
+#   400 (INVALID_REQUEST) 이면 서버 .env 의 FRONTEND_BASE_URL 이 접속 주소와 다릅니다. 10장 참고.
+
+# 9) 브라우저로 실제 로그인 (Cmd/Ctrl + Shift + R 로 강력 새로고침 후)
 ```
+
+**검사 전에 백엔드 부팅을 기다리세요.** `dcp up -d` 직후 30~60초 동안은 nginx가
+**502 Bad Gateway**를 돌려줍니다. 백엔드가 아직 안 뜬 것이지 설정 오류가 아닙니다.
+
+```bash
+# healthy 가 될 때까지 대기
+until [ "$(docker inspect --format '{{.State.Health.Status}}' relationship-temperature-backend-1)" = "healthy" ]; do
+  echo "부팅 중..."; sleep 5
+done; echo "준비 완료"
+```
+
+설정을 고친 뒤에는 **브라우저 강력 새로고침**을 하세요. 실패한 응답이나 리다이렉트가
+캐시돼 있으면 고쳐도 같은 에러 화면이 계속 보입니다.
 
 ---
 
@@ -474,10 +566,56 @@ nginx 쪽은 이미 처리돼 있습니다 — SSE 경로만 따로 `proxy_buffe
 | 카카오 Redirect URI | 카카오 콘솔 | `{FRONTEND_BASE_URL}/api/v1/auth/kakao/callback` |
 | `SESSION_COOKIE_SECURE` | 서버 `.env` | https면 `true` |
 
-- `FRONTEND_BASE_URL`이 틀리면 로그인 성공 후 엉뚱한 주소로 튕깁니다. `OAuthRedirectUriValidator`가 scheme·host·port까지 same-origin 검사를 합니다.
 - https인데 `SESSION_COOKIE_SECURE=false`로 두면 동작은 하지만 쿠키가 평문에도 실려 나갑니다. https면 `true`로 두세요.
 
-### 8-6. 데이터는 named volume에 있습니다
+**`FRONTEND_BASE_URL`이 틀리면 로그인 버튼을 누르는 순간 400이 납니다.**
+
+프론트는 로그인 진입 시 **현재 오리진**을 쿼리로 붙여 호출합니다 (`front/src/api/auth.js`).
+
+```js
+const redirectUri = encodeURIComponent(window.location.origin);
+return `/api/v1/auth/kakao/authorize?redirectUri=${redirectUri}`;
+```
+
+백엔드는 그 값을 `FRONTEND_BASE_URL`과 **scheme·host·port까지** 비교하고, 하나라도 다르면
+`INVALID_REQUEST`를 던집니다 (`OAuthRedirectUriValidator`).
+
+```json
+{"error":{"code":"INVALID_REQUEST","message":"요청 형식이 올바르지 않습니다.", ...}}
+```
+
+`https`인데 `http`로 적었거나, 아직 `http://localhost:5173`이 남아 있거나,
+apex 도메인으로 접속하는데 값은 `www.`로 적혀 있으면 전부 여기서 걸립니다.
+
+### 8-6. 환경변수 변경은 `restart`로 반영되지 않습니다
+
+환경변수는 **컨테이너를 만드는 시점에 박힙니다.** `.env`를 고치고 `restart`만 하면 예전 값이
+그대로 살아 있어서, 파일은 맞는데 증상이 그대로인 상황이 됩니다.
+
+```bash
+dcp restart backend                      # ✗ .env 변경 반영 안 됨
+dcp up -d backend                        # ✓ 컨테이너를 새로 만듦
+dcp up -d --force-recreate backend       # ✓ 변경 감지가 안 될 때 강제
+```
+
+**파일이 아니라 컨테이너 안 값을 확인하세요.**
+
+```bash
+cat -A .env | grep FRONTEND_BASE_URL                    # 1) 파일 (숨은 문자까지)
+dcp config | grep FRONTEND_BASE_URL                     # 2) compose 해석 결과
+dcp exec backend printenv FRONTEND_BASE_URL             # 3) 실제 주입된 값  ← 결정적
+```
+
+1번에서 `cat -A`를 쓰는 이유는 눈에 안 보이는 문자를 드러내기 위해서입니다.
+
+```
+FRONTEND_BASE_URL=https://ktb-ai-hackathon-team14.com$      정상 ($ = 줄끝)
+FRONTEND_BASE_URL=https://ktb-ai-hackathon-team14.com^M$    윈도우 줄바꿈 → 값에 \r 포함
+FRONTEND_BASE_URL=https://ktb-ai-hackathon-team14.com $     끝에 공백
+FRONTEND_BASE_URL="https://ktb-ai-hackathon-team14.com"$    따옴표
+```
+
+### 8-7. 데이터는 named volume에 있습니다
 
 ```
 relationship-temperature-postgres    앱 DB + 세션 테이블
@@ -489,7 +627,7 @@ relationship-temperature-uploads     업로드 파일
 - `up -d --build`로 컨테이너를 갈아끼워도 볼륨은 유지됩니다.
 - 세션이 `spring_session` 테이블(JDBC)에 저장되므로 **백엔드를 재시작해도 로그인이 유지**됩니다. 나중에 EC2를 늘려도 sticky session이 필요 없습니다. 다만 postgres 볼륨을 날리면 전원 로그아웃됩니다.
 
-### 8-7. Flyway 마이그레이션은 자동이고, 롤백이 없습니다
+### 8-8. Flyway 마이그레이션은 자동이고, 롤백이 없습니다
 
 컨테이너가 뜰 때 `db/migration`의 SQL이 순서대로 적용됩니다. `ddl-auto: validate`라서 엔티티와 스키마가 어긋나면 **기동 자체가 실패**하고, 백엔드가 계속 재시작합니다.
 
@@ -500,13 +638,13 @@ relationship-temperature-uploads     업로드 파일
 dcp exec -T postgres pg_dump -U relationship_temperature relationship_temperature > backup_$(date +%F).sql
 ```
 
-### 8-8. `.env`는 서버에서 직접 만듭니다
+### 8-9. `.env`는 서버에서 직접 만듭니다
 
 `.gitignore`에 있어서 clone해도 따라오지 않습니다.
 
 > **지금 저장소의 `.env.example`에 실제 카카오 REST API 키와 Client Secret이 커밋돼 있습니다.** 노출된 값으로 보고 콘솔에서 재발급한 뒤, `.env.example`은 placeholder로 바꾸세요.
 
-### 8-9. 디스크가 조용히 찹니다
+### 8-10. 디스크가 조용히 찹니다
 
 - 배포를 반복하면 빌드 캐시가 쌓입니다. `docker builder prune -f`를 주기적으로 돌리세요.
 - 컨테이너 로그(json-file)는 기본 설정으로 무한히 커집니다. `/etc/docker/daemon.json`에 로테이션을 걸어두세요.
@@ -515,7 +653,7 @@ dcp exec -T postgres pg_dump -U relationship_temperature relationship_temperatur
 { "log-driver": "json-file", "log-opts": { "max-size": "10m", "max-file": "3" } }
 ```
 
-### 8-10. 그 밖에
+### 8-11. 그 밖에
 
 - **재부팅**: 서비스는 `restart: unless-stopped`라 자동 복구되지만, `systemctl enable docker`가 안 돼 있으면 도커 자체가 안 뜹니다.
 - **시간대**: backend 컨테이너는 `TZ=Asia/Seoul`입니다. 업로드 파일 보존 정책(`RAW_CONVERSATION_RETENTION=24h`)과 정리 cron(매시 15분)이 이 기준으로 돕니다.
@@ -540,14 +678,49 @@ git pull && dcp up -d --build     # 코드 업데이트
 
 ## 10. 트러블슈팅
 
+### 먼저: 누가 에러를 만들었는지 확인하세요
+
+응답 헤더의 `server:` 하나로 어느 구간에서 끊겼는지 바로 알 수 있습니다. 이게 가장 빠릅니다.
+
+```bash
+curl -sI https://ktb-ai-hackathon-team14.com/ | head -3
+```
+
+| `server:` 값 | 만든 주체 | 끊긴 구간 |
+|---|---|---|
+| `awselb/2.0` | ALB | ALB → EC2 (대상 그룹이 unhealthy) |
+| `nginx/1.27.5` | EC2의 nginx | nginx → backend (백엔드가 없거나 죽음) |
+| 응답 자체가 없음 (`000`) | — | 브라우저 → ALB (보안 그룹 / DNS) |
+
+### 바깥에서 한 번에 점검
+
+```bash
+D=ktb-ai-hackathon-team14.com
+dig +short $D                                             # ALB IP 2개가 나와야 정상
+curl -sI -m 10 https://$D/ | head -3                      # 상태 코드와 server 헤더
+curl -s -o /dev/null -m 10 -w '%{http_code}\n' https://$D/healthz
+curl -s -o /dev/null -m 10 -w '%{redirect_url}\n' https://$D/oauth2/authorization/kakao
+```
+
+### 증상별
+
 | 증상 | 원인 / 해결 |
 |---|---|
 | `sudo: 'dnf': command not found` | 인스턴스가 Ubuntu입니다. `dnf`가 아니라 `apt`를 쓰세요 (4장) |
 | `docker: 'compose' is not a docker command` | Compose v2 플러그인이 없습니다. `apt install docker.io`로 깔았다면 지우고 공식 저장소로 재설치하세요 (4장) |
 | `permission denied ... /var/run/docker.sock` | `usermod -aG docker $USER` 후 재접속하지 않았습니다. `exit` 후 다시 ssh 하거나 `newgrp docker` |
 | `docker: command not found` | 설치 실패 또는 `systemctl enable --now docker` 누락. `sudo systemctl status docker` |
-| ALB 대상이 계속 `unhealthy` | `ec2-sg` 인바운드 80이 `alb-sg`로 열려 있는지, `curl localhost/healthz`가 200인지 확인 |
-| `502 Bad Gateway` | 백엔드가 아직 기동 중이거나 죽음. `dcp ps`, `dcp logs backend` |
+| **`503 Service Temporarily Unavailable`** (`server: awselb/2.0`) | ALB에 healthy 대상이 0개. 대상 그룹 포트가 80인지, 대상이 등록됐는지, `ec2-sg` 80 소스가 `alb-sg`인지 확인 |
+| **`502 Bad Gateway`** (`server: nginx/1.27.5`) | nginx는 살아 있고 백엔드가 없음. `dcp up -d` 직후 30~60초는 정상. 계속되면 `dcp logs backend` |
+| **`INVALID_REQUEST` (400)** — 로그인 버튼 클릭 시 | `.env`의 `FRONTEND_BASE_URL`이 접속 주소와 불일치. 8-5, 8-6 참고 |
+| **Whitelabel Error Page (500)** at `/error` | 필터 체인 내부 예외(대개 OAuth 콜백). `dcp logs --tail 100 backend \| grep -iE "ERROR\|Exception"` |
+| ALB IP의 80/443이 **closed/filtered** | `alb-sg` 인바운드 소스가 `0.0.0.0/0`이 아님 (기본값 "내 IP"). 3-2 참고 |
+| 나는 접속되는데 팀원은 안 됨 | 같은 원인. `alb-sg` 소스가 `x.x.x.x/32` |
+| `.env`를 고쳤는데 증상 그대로 | `restart`로는 반영되지 않음. `dcp up -d --force-recreate backend`. 8-6 참고 |
+| 설정을 고쳤는데 같은 에러 화면 | 브라우저 캐시. `Cmd/Ctrl + Shift + R` 강력 새로고침 |
+| `www.` 붙이면 접속 안 됨 | Route53에 www 레코드 없음. 3-5 참고 |
+| 화면은 뜨는데 API만 503 | 443 리스너에 `/api/*` → 별도 대상 그룹 규칙이 남아 있음. 3-4 참고 |
+| ALB 대상이 계속 `unhealthy` | `ec2-sg` 인바운드 80이 `alb-sg`로 열려 있는지, `curl localhost/healthz`가 200인지 확인. 대상 그룹 포트가 3000/8080이면 절대 healthy가 되지 않음 |
 | `504 Gateway Timeout` (상담 화면) | ALB 유휴 시간 초과가 60초. 180초로 올리세요 (8-4) |
 | 상담 답변이 안 나오고 멈춤 | SSE 버퍼링. `dcp exec front nginx -T \| grep proxy_buffering`로 `off` 확인 |
 | `KOE006` | Redirect URI 불일치. 검증 6번을 돌려 `redirect_uri`가 `https://`이고 `/api/v1`이 있는지 확인 |
