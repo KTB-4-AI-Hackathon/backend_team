@@ -1,4 +1,5 @@
 import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon } from '../../components/Icons';
+import wordmark from '../../assets/images/wouldu-wordmark.png';
 import '../../components/AppLayout.css';
 
 // 실제 AppLayout과 동일한 마크업/클래스를 쓰는 인트로 전용 데모 셸.
@@ -12,7 +13,7 @@ export default function DemoAppShell({ active, children, cursor = null }) {
             <div className="brand">
               <LogoMark size={34} />
               <div className="brand-text">
-                <div className="brand-name">관계온도</div>
+                <img className="brand-name-img" src={wordmark} alt="WouldU" />
                 <div className="brand-tag">끝없는 관계의 우주</div>
               </div>
               <button className="sidebar-toggle" type="button" tabIndex={-1}>

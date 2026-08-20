@@ -16,12 +16,7 @@ import Scene09Kakao from './scenes/Scene09Kakao';
 import Scene10Logo from './scenes/Scene10Logo';
 import './intro.css';
 
-// 새로고침(페이지 로드)마다 다시 재생: 저장소 대신 메모리 플래그를 쓴다.
-// 같은 로드 안에서의 SPA 이동으로 /login에 돌아올 때만 중복 재생을 막는다.
-let playedThisLoad = false;
-export function hasIntroPlayed() {
-  return playedThisLoad;
-}
+import { markIntroPlayed } from './introState';
 
 const SCENES = [
   { id: 'login', dur: 1400, stage: null, Comp: Scene01Login },
@@ -55,7 +50,7 @@ export default function IntroPage() {
   );
 
   const finish = useCallback(() => {
-    playedThisLoad = true;
+    markIntroPlayed();
     navigate('/login', { replace: true });
   }, [navigate]);
 

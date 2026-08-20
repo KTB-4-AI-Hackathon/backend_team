@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { hasIntroPlayed } from '../intro/IntroPage';
+import { hasIntroPlayed } from '../intro/introState';
 import { LogoMark, KakaoIcon, SparkleIcon, CheckIcon, ChatIcon } from '../components/Icons';
 import Moon from '../components/Moon';
 import Astronaut from '../components/Astronaut';

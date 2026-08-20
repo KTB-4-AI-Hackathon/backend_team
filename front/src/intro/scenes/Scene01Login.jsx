@@ -2,6 +2,7 @@ import DemoCursor from '../parts/DemoCursor';
 import Astronaut from '../../components/Astronaut';
 import Moon from '../../components/Moon';
 import { LogoMark, KakaoIcon, SparkleIcon, CheckIcon, ChatIcon } from '../../components/Icons';
+import wordmark from '../../assets/images/wouldu-wordmark.png';
 import '../../pages/Auth.css';
 
 // 실제 LoginPage와 동일한 마크업을 1240x760 데모 화면으로 재생한다.
@@ -35,7 +36,7 @@ export default function Scene01Login() {
             </svg>
             <div className="auth-logo">
               <LogoMark size={38} />
-              <span className="auth-logo-name">관계온도</span>
+              <img className="auth-logo-name-img" src={wordmark} alt="WouldU" />
             </div>
             <h1 className="auth-catch">
               감이 아니라 데이터로,

@@ -2,29 +2,29 @@ import Astronaut from '../../components/Astronaut';
 import Moon from '../../components/Moon';
 import { LogoMark } from '../../components/Icons';
 import { Rocket, Planet } from '../parts/SpaceProps';
+import wordmark from '../../assets/images/wouldu-wordmark.png';
 
-const SLOTS = [
-  { ch: '관', Obj: () => <Rocket size={54} /> },
-  { ch: '계', Obj: () => <Astronaut size={54} /> },
-  { ch: '온', Obj: () => <Planet size={54} /> },
-  { ch: '도', Obj: () => <Moon scale={0.5} /> },
-];
+const OBJS = [Rocket, Astronaut, Planet, () => <Moon scale={0.5} />];
 
 export default function Scene10Logo() {
   return (
     <div className="s10-wrap">
-      <div className="s10-row">
-        <span className="s10-mark">
-          <LogoMark size={40} />
-        </span>
-        {SLOTS.map(({ ch, Obj }, i) => (
-          <span key={ch} className="s10-slot" style={{ '--i': i }}>
-            <span className="s10-obj">
-              <Obj />
+      <div className="s10-stage">
+        <div className="s10-objs">
+          {OBJS.map((Obj, i) => (
+            <span key={i} className="s10-slot" style={{ '--i': i }}>
+              <span className="s10-obj">
+                <Obj size={54} />
+              </span>
             </span>
-            <span className="s10-char">{ch}</span>
+          ))}
+        </div>
+        <div className="s10-brand">
+          <span className="s10-mark">
+            <LogoMark size={44} />
           </span>
-        ))}
+          <img className="s10-wordmark" src={wordmark} alt="WouldU" />
+        </div>
       </div>
       <p className="s10-tag">당신의 대화 속에 관계를 이해할 힌트가 있어요.</p>
     </div>

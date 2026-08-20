@@ -1,12 +1,14 @@
 import Moon from '../../components/Moon';
 import Astronaut from '../../components/Astronaut';
 import { PlusIcon, SparkleIcon } from '../../components/Icons';
+import ufoImage from '../../assets/images/UFO.png';
 import '../../pages/Dashboard.css';
 
 // 실제 DashboardPage의 빈 우주 상태와 동일한 마크업.
 export default function DashboardDemo() {
   return (
     <section className="view">
+      <img className="dashboard-ufo" src={ufoImage} alt="" aria-hidden="true" />
       <div className="page-head">
         <div className="page-head-copy">
           <h1 className="page-title">이번 주 나의 관계 온도</h1>
