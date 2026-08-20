@@ -1,6 +1,8 @@
-const cx = 130;
-const cy = 128;
-const maxR = 100;
+// Keep label room inside the SVG viewport. In particular, the lower-right
+// "친밀감" label needs space to the right of its anchor point.
+const cx = 143;
+const cy = 132;
+const maxR = 96;
 // Mirrors the dashboard's "needsAttention" rule (score < 60) so the radar's
 // dashed ring lines up with the same threshold used elsewhere in the app.
 const ATTENTION_THRESHOLD = 60;
@@ -40,7 +42,7 @@ export default function RadarChart({ values, labels }) {
   const dataPoly = dataPts.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg viewBox="0 0 260 256" style={{ width: '100%', height: 'auto' }}>
+    <svg viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
       {rings}
       <polygon
         points={cutPts}

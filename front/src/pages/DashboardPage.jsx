@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchDashboard } from '../api/dashboard';
 import Moon from '../components/Moon';
 import Astronaut from '../components/Astronaut';
 import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal';
-import { PlusIcon, SparkleIcon, WarnIcon } from '../components/Icons';
+import { ChevronDownIcon, CheckIcon, PlusIcon, SparkleIcon, WarnIcon } from '../components/Icons';
 import { avatarGradientFor } from '../utils/avatar';
 import { RELATIONSHIP_TYPE_LABELS } from '../data/constants';
 import './Dashboard.css';
@@ -32,6 +32,8 @@ export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef(null);
 
   const load = useCallback(async (nextSort) => {
     setLoading(true);
@@ -49,6 +51,23 @@ export default function DashboardPage() {
   useEffect(() => {
     load(sort);
   }, [load, sort]);
+
+  useEffect(() => {
+    function closeSortMenu(event) {
+      if (!sortMenuRef.current?.contains(event.target)) setIsSortMenuOpen(false);
+    }
+
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') setIsSortMenuOpen(false);
+    }
+
+    document.addEventListener('mousedown', closeSortMenu);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeSortMenu);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
 
   const isEmpty = !loading && !error && data && data.relationships.length === 0;
 
@@ -107,11 +126,42 @@ export default function DashboardPage() {
           <div>
             <div className="panel-title-row">
               <span className="panel-title">등록된 인물 ({data.relationships.length})</span>
-              <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+              <div className="sort-menu" ref={sortMenuRef}>
+                <button
+                  type="button"
+                  className="sort-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={isSortMenuOpen}
+                  aria-controls="relationship-sort-menu"
+                  onClick={() => setIsSortMenuOpen((open) => !open)}
+                >
+                  <span>{SORT_OPTIONS.find((option) => option.value === sort)?.label}</span>
+                  <ChevronDownIcon className="sort-trigger-icon" />
+                </button>
+                {isSortMenuOpen && (
+                  <div id="relationship-sort-menu" className="sort-options" role="menu" aria-label="인물 정렬">
+                    {SORT_OPTIONS.map((option) => {
+                      const selected = option.value === sort;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`sort-option${selected ? ' selected' : ''}`}
+                          role="menuitemradio"
+                          aria-checked={selected}
+                          onClick={() => {
+                            setSort(option.value);
+                            setIsSortMenuOpen(false);
+                          }}
+                        >
+                          <span>{option.label}</span>
+                          {selected && <CheckIcon aria-hidden="true" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="person-grid">
