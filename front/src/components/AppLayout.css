@@ -295,3 +295,11 @@
     text-align: center;
   }
 }
+
+.brand-name-img {
+  display: block;
+  height: 14px;
+  width: auto;
+  margin-top: 2px;
+  image-rendering: pixelated;
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon } from './Icons';
+import wordmark from '../assets/images/wouldu-wordmark.png';
 import './AppLayout.css';
 
 const COLLAPSE_KEY = 'gwangye-sidebar-collapsed';
@@ -42,7 +43,7 @@ export default function AppLayout() {
         <div className="brand">
           <LogoMark size={34} />
           <div className="brand-text">
-            <div className="brand-name">관계온도</div>
+            <img className="brand-name-img" src={wordmark} alt="WouldU" />
             <div className="brand-tag">끝없는 관계의 우주</div>
           </div>
           <button

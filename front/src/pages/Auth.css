@@ -410,3 +410,10 @@
     padding: 26px 20px 24px;
   }
 }
+
+.auth-logo-name-img {
+  display: block;
+  height: 17px;
+  width: auto;
+  image-rendering: pixelated;
+}
