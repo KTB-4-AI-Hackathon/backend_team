@@ -66,4 +66,51 @@ class ChatStreamServiceTest {
         verify(messageRepository).save(assistant);
         verify(consultationRepository).save(consultation);
     }
+
+    @Test
+    void suppressesRepeatedSupportRecommendationInSameConsultation() {
+        ChatMessageRepository messageRepository = mock(ChatMessageRepository.class);
+        ConsultationRepository consultationRepository = mock(ConsultationRepository.class);
+        ChatAiClient aiClient = mock(ChatAiClient.class);
+        ChatStreamService service = new ChatStreamService(messageRepository, consultationRepository, aiClient);
+
+        Consultation consultation = new Consultation(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        ChatMessage previous = ChatMessage.assistant(
+                consultation.getId(), null, "이전 답변", MessageStatus.COMPLETED
+        );
+        previous.complete(
+                "이전 답변", List.of(), new ChatMessage.SafetyNotice(
+                        "SUPPORT_RECOMMENDATION", "상담 권유", "전문 상담을 권해요.",
+                        new ChatMessage.ResourceQuery("RELATIONSHIP_COUNSELING", "KR")
+                )
+        );
+        ChatMessage user = ChatMessage.user(consultation.getId(), "계속 힘들어요");
+        ChatMessage assistant = ChatMessage.assistant(
+                consultation.getId(), user.getId(), "", MessageStatus.GENERATING
+        );
+        ChatAiClient.ChatContext context = new ChatAiClient.ChatContext(
+                consultation.getReportId(), 40, -5,
+                new ChatAiClient.PrqcContext(40, 40, 40, 40, 80, 80),
+                List.of(), List.of(), List.of(), user.getContent()
+        );
+        ChatMessage.SafetyNotice notice = new ChatMessage.SafetyNotice(
+                "SUPPORT_RECOMMENDATION", "상담 권유", "전문 상담을 권해요.",
+                new ChatMessage.ResourceQuery("RELATIONSHIP_COUNSELING", "KR")
+        );
+        when(messageRepository.findById(assistant.getId())).thenReturn(Optional.of(assistant));
+        when(messageRepository.findAllByConsultationIdOrderByCreatedAtAsc(consultation.getId()))
+                .thenReturn(List.of(previous));
+        when(messageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(consultationRepository.findById(consultation.getId())).thenReturn(Optional.of(consultation));
+        when(consultationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(aiClient.answer(context)).thenReturn(new ChatAiClient.ChatAnswer(
+                "반복 안내가 없어야 해요.", List.of(), notice
+        ));
+
+        service.start(new ChatRequestedEvent(
+                consultation.getId(), user.getId(), assistant.getId(), context
+        ));
+
+        assertThat(assistant.getSafetyNotice()).isNull();
+    }
 }

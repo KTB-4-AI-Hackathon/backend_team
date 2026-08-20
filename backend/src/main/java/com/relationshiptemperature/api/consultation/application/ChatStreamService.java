@@ -74,6 +74,7 @@ public class ChatStreamService {
         try {
             send(event.assistantMessageId(), "assistant.started", Map.of("messageId", assistant.getId()));
             ChatAiClient.ChatAnswer answer = chatAiClient.answer(event.context());
+            answer = suppressRepeatedSupportRecommendation(event.consultationId(), answer);
             validateAnswer(event.context(), answer);
             for (String delta : deltas(answer.content())) {
                 send(event.assistantMessageId(), "assistant.delta", Map.of(
@@ -148,6 +149,22 @@ public class ChatStreamService {
                 && !Set.of("SUPPORT_RECOMMENDATION", "CRISIS_SUPPORT").contains(answer.safetyNotice().type())) {
             throw new IllegalArgumentException("AI answer safety notice type is invalid");
         }
+    }
+
+    private ChatAiClient.ChatAnswer suppressRepeatedSupportRecommendation(
+            String consultationId, ChatAiClient.ChatAnswer answer
+    ) {
+        if (answer == null || answer.safetyNotice() == null
+                || !"SUPPORT_RECOMMENDATION".equals(answer.safetyNotice().type())) {
+            return answer;
+        }
+        boolean alreadyShown = messageRepository.findAllByConsultationIdOrderByCreatedAtAsc(consultationId).stream()
+                .anyMatch(message -> message.getSafetyNotice() != null
+                        && "SUPPORT_RECOMMENDATION".equals(message.getSafetyNotice().type()));
+        if (!alreadyShown) {
+            return answer;
+        }
+        return new ChatAiClient.ChatAnswer(answer.content(), answer.evidenceRefs(), null);
     }
 
     private Object failedData(ChatMessage message) {
