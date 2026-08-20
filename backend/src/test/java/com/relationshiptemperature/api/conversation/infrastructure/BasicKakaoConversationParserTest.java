@@ -266,7 +266,7 @@ class BasicKakaoConversationParserTest {
 
     @Test
     void keepsVariationSelectorThatBelongsToAnEmojiName() throws Exception {
-        // "자걸녀❤️" 의 U+FE0F 는 ❤ 의 일부이므로 지우면 안 된다.
+        // "왕왕❤️" 의 U+FE0F 는 ❤ 의 일부이므로 지우면 안 된다.
         String content = """
                 2023. 4. 13. 10:35, 왕왕\u2764\uFE0F : 안녕
                 2023. 4. 13. 10:51, 김가령 : 응
@@ -274,7 +274,7 @@ class BasicKakaoConversationParserTest {
 
         var parsed = parser.parse(input(content), "김가령");
 
-        assertThat(parsed.otherParticipantName()).isEqualTo("자걸녀\u2764\uFE0F");
+        assertThat(parsed.otherParticipantName()).isEqualTo("왕왕\u2764\uFE0F");
     }
 
     @Test
