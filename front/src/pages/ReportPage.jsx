@@ -233,7 +233,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
 
       <div className="evidence-row report-analysis">
         {report.evidences.length > 0 ? (
-          report.evidences.slice(0, 2).map((ev) => (
+          report.evidences.map((ev) => (
             <div className="evidence-card" key={ev.id}>
               <div className="evidence-top">
                 <QuoteIcon />

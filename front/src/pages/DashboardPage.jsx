@@ -7,6 +7,7 @@ import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal'
 import { ChevronDownIcon, CheckIcon, PlusIcon, SparkleIcon, WarnIcon } from '../components/Icons';
 import { avatarGradientFor } from '../utils/avatar';
 import { RELATIONSHIP_TYPE_LABELS } from '../data/constants';
+import ufoImage from '../assets/images/UFO.png';
 import './Dashboard.css';
 
 const SORT_OPTIONS = [
@@ -73,6 +74,7 @@ export default function DashboardPage() {
 
   return (
     <section className="view">
+      <img className="dashboard-ufo" src={ufoImage} alt="" aria-hidden="true" />
       <div className="page-head">
         <div className="page-head-copy">
           <h1 className="page-title">이번 주 나의 관계 온도</h1>
