@@ -9,8 +9,10 @@
 #
 # 도메인/비밀값은 서버의 .env 에서 읽는다. .env.prod.example 참고.
 
-# 메모리 제한은 t3.medium(4GB) 기준. t3.small(2GB)이면 .env 에서 줄인다.
-#   BACKEND_MEM=900m MONGO_MEM=600m POSTGRES_MEM=256m FRONT_MEM=64m AI_MEM=256m
+# 메모리 제한은 t3.xlarge(16GB) 기준. 작은 인스턴스면 .env 에서 줄인다.
+#   t3.medium(4GB): BACKEND_MEM=1200m MONGO_MEM=768m POSTGRES_MEM=512m FRONT_MEM=128m AI_MEM=384m
+#   t3.small(2GB):  BACKEND_MEM=900m MONGO_MEM=600m POSTGRES_MEM=256m FRONT_MEM=64m AI_MEM=256m
+# .env 값이 아래 기본값을 항상 이기므로, 인스턴스를 키웠으면 .env 의 *_MEM 줄을 지워야 적용된다.
 # 백엔드 JVM은 -XX:MaxRAMPercentage=75 라서, 제한이 없으면 호스트 RAM의 75%를
 # 힙으로 잡아 다른 컨테이너를 굶긴다. mem_limit 이 반드시 있어야 한다.
 
@@ -19,18 +21,18 @@ services:
     # 외부 노출 금지. 접속은 docker compose exec 로.
     ports: !reset []
     restart: unless-stopped
-    mem_limit: ${POSTGRES_MEM:-512m}
+    mem_limit: ${POSTGRES_MEM:-1g}
 
   mongo:
     ports: !reset []
     restart: unless-stopped
-    mem_limit: ${MONGO_MEM:-1g}
+    mem_limit: ${MONGO_MEM:-2g}
 
   backend:
     # nginx가 프록시하므로 8080을 호스트에 뚫지 않는다.
     ports: !reset []
     restart: unless-stopped
-    mem_limit: ${BACKEND_MEM:-1500m}
+    mem_limit: ${BACKEND_MEM:-3g}
     environment:
       # 로그인 성공 후 돌아갈 주소. 실제 접속 오리진과 정확히 같아야 한다
       # (OAuthRedirectUriValidator가 scheme·host·port로 same-origin 검사).
@@ -42,7 +44,7 @@ services:
     # 로컬에서는 opt-in profile 이지만, 배포에서는 항상 뜬다.
     profiles: !reset []
     restart: unless-stopped
-    mem_limit: ${AI_MEM:-384m}
+    mem_limit: ${AI_MEM:-512m}
     environment:
       # LLM(Gemini) 호출에 필수. 없으면 분석 요청이 전부 실패하므로 기동 전에 잡는다.
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:?GOOGLE_API_KEY를 .env에 설정하세요}
