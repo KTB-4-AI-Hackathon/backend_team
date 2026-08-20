@@ -14,6 +14,7 @@ import com.relationshiptemperature.api.consultation.domain.Consultation;
 import com.relationshiptemperature.api.consultation.domain.MessageStatus;
 import com.relationshiptemperature.api.consultation.repository.ChatMessageRepository;
 import com.relationshiptemperature.api.consultation.repository.ConsultationRepository;
+import com.relationshiptemperature.api.conversation.repository.ConversationMessageRepository;
 import com.relationshiptemperature.api.relationship.application.RelationshipService;
 import com.relationshiptemperature.api.report.application.ReportService;
 import com.relationshiptemperature.api.report.domain.RelationshipReport;
@@ -35,6 +36,7 @@ class ConsultationServiceTest {
     private RelationshipService relationshipService;
     private ReportService reportService;
     private ChatStreamService chatStreamService;
+    private ConversationMessageRepository conversationMessageRepository;
     private ConsultationService service;
 
     @BeforeEach
@@ -44,8 +46,10 @@ class ConsultationServiceTest {
         relationshipService = mock(RelationshipService.class);
         reportService = mock(ReportService.class);
         chatStreamService = mock(ChatStreamService.class);
+        conversationMessageRepository = mock(ConversationMessageRepository.class);
         service = new ConsultationService(
-                consultationRepository, messageRepository, relationshipService, reportService, chatStreamService
+                consultationRepository, messageRepository, relationshipService, reportService,
+                chatStreamService, conversationMessageRepository
         );
         when(consultationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(messageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -89,6 +93,9 @@ class ConsultationServiceTest {
         when(messageRepository.findTop20ByConsultationIdAndStatusOrderByCreatedAtDesc(
                 consultation.getId(), MessageStatus.COMPLETED
         )).thenReturn(List.of(history));
+        when(conversationMessageRepository.findAllByRelationshipIdOrderBySentAtAscSequenceNumberAsc(
+                relationshipId
+        )).thenReturn(List.of());
 
         ConsultationService.AcceptedMessage accepted = service.send(
                 userId, consultation.getId(), "  답장이 늦으면 불안해요.  "
@@ -108,6 +115,7 @@ class ConsultationServiceTest {
                 .containsExactly("신뢰 관련 응답 패턴이 관찰됐어요.");
         assertThat(context.recentMessages()).extracting(ChatAiClient.HistoryMessage::content)
                 .containsExactly("이전 답변");
+        assertThat(context.conversationMessages()).isEmpty();
     }
 
     @Test

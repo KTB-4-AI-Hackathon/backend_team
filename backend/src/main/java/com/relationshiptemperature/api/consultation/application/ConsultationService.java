@@ -11,6 +11,8 @@ import com.relationshiptemperature.api.consultation.domain.Consultation;
 import com.relationshiptemperature.api.consultation.domain.MessageStatus;
 import com.relationshiptemperature.api.consultation.repository.ChatMessageRepository;
 import com.relationshiptemperature.api.consultation.repository.ConsultationRepository;
+import com.relationshiptemperature.api.conversation.domain.ConversationMessage;
+import com.relationshiptemperature.api.conversation.repository.ConversationMessageRepository;
 import com.relationshiptemperature.api.relationship.application.RelationshipService;
 import com.relationshiptemperature.api.report.application.ReportService;
 import com.relationshiptemperature.api.report.domain.RelationshipReport;
@@ -31,19 +33,22 @@ public class ConsultationService {
     private final RelationshipService relationshipService;
     private final ReportService reportService;
     private final ChatStreamService chatStreamService;
+    private final ConversationMessageRepository conversationMessageRepository;
 
     public ConsultationService(
             ConsultationRepository consultationRepository,
             ChatMessageRepository messageRepository,
             RelationshipService relationshipService,
             ReportService reportService,
-            ChatStreamService chatStreamService
+            ChatStreamService chatStreamService,
+            ConversationMessageRepository conversationMessageRepository
     ) {
         this.consultationRepository = consultationRepository;
         this.messageRepository = messageRepository;
         this.relationshipService = relationshipService;
         this.reportService = reportService;
         this.chatStreamService = chatStreamService;
+        this.conversationMessageRepository = conversationMessageRepository;
     }
 
     public Consultation create(UUID userId, UUID relationshipId) {
@@ -114,6 +119,12 @@ public class ConsultationService {
         List<HistoryMessage> history = recent.stream()
                 .map(item -> new HistoryMessage(item.getRole(), item.getContent()))
                 .toList();
+        List<ChatAiClient.ConversationMessageContext> conversationMessages =
+                conversationMessageRepository
+                        .findAllByRelationshipIdOrderBySentAtAscSequenceNumberAsc(consultation.getRelationshipId())
+                        .stream()
+                        .map(this::conversationMessageContext)
+                        .toList();
         return new ChatContext(
                 report.getId(), report.getOverallScore(), report.getScoreChange(),
                 new PrqcContext(
@@ -122,7 +133,14 @@ public class ConsultationService {
                 ),
                 evidences,
                 history,
+                conversationMessages,
                 userMessage
+        );
+    }
+
+    private ChatAiClient.ConversationMessageContext conversationMessageContext(ConversationMessage message) {
+        return new ChatAiClient.ConversationMessageContext(
+                message.getParticipantRole().name(), message.getSentAt(), message.getContent()
         );
     }
 

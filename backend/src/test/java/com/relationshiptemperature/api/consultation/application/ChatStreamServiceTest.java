@@ -44,7 +44,7 @@ class ChatStreamServiceTest {
                 List.of(new ChatAiClient.EvidenceContext(
                         "evidence-1", "trust", 70, "최근 응답 패턴"
                 )),
-                List.of(), user.getContent()
+                List.of(), List.of(), user.getContent()
         );
         when(messageRepository.findById(assistant.getId())).thenReturn(Optional.of(assistant));
         when(messageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

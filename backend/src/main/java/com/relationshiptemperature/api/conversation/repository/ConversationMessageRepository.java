@@ -11,5 +11,7 @@ public interface ConversationMessageRepository extends MongoRepository<Conversat
 
     List<ConversationMessage> findAllByRelationshipId(UUID relationshipId);
 
+    List<ConversationMessage> findAllByRelationshipIdOrderBySentAtAscSequenceNumberAsc(UUID relationshipId);
+
     void deleteAllByConversationFileId(UUID fileId);
 }
