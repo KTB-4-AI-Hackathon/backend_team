@@ -84,6 +84,21 @@ class BasicKakaoConversationParserTest {
     }
 
     @Test
+    void acceptsTestFixtureWithTheExactSelfMarker() throws Exception {
+        String content = """
+                2026년 8월 19일 수요일
+                오후 7:23 본인 안녕
+                오후 7:24 이진우 반가워
+                """;
+
+        var parsed = parser.parse(input(content), "강명진", true);
+
+        assertThat(parsed.selfParticipantName()).isEqualTo("본인");
+        assertThat(parsed.otherParticipantName()).isEqualTo("이진우");
+        assertThat(parsed.messages().getFirst().role()).isEqualTo(ConversationParticipantRole.SELF);
+    }
+
+    @Test
     void rejectsTxtGroupConversation() {
         assertInvalid("""
                 2026년 8월 19일 수요일

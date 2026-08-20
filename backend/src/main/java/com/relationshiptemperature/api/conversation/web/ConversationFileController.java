@@ -71,6 +71,7 @@ public class ConversationFileController {
             String source,
             String selfParticipantName,
             String otherParticipantName,
+            boolean testFixture,
             ConversationFileStatus validationStatus,
             Integer messageCount,
             Instant conversationStartedAt,
@@ -82,6 +83,7 @@ public class ConversationFileController {
             return new ConversationFileResponse(
                     file.getId(), file.getRelationshipId(), file.getOriginalFileName(), file.getSizeBytes(),
                     "KAKAO_TALK", file.getSelfParticipantName(), file.getOtherParticipantName(),
+                    file.isTestFixture(),
                     file.getValidationStatus(), file.getMessageCount(),
                     file.getConversationStartedAt(), file.getConversationEndedAt(), file.getExpiresAt(), file.getCreatedAt()
             );

@@ -10,6 +10,14 @@ public interface KakaoConversationParser {
 
     ParsedConversation parse(InputStream inputStream, String selfParticipantName) throws IOException;
 
+    default ParsedConversation parse(
+            InputStream inputStream,
+            String selfParticipantName,
+            boolean testFixture
+    ) throws IOException {
+        return parse(inputStream, selfParticipantName);
+    }
+
     default ParseResult parse(InputStream inputStream) throws IOException {
         throw new ApiException(ErrorCode.INVALID_KAKAO_EXPORT);
     }
