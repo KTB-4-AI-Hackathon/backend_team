@@ -14,9 +14,9 @@ export default function Scene06Analysis() {
   const [done, setDone] = useState(false);
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStage(1), 600),
-      setTimeout(() => setStage(2), 1200),
-      setTimeout(() => setDone(true), 1800),
+      setTimeout(() => setStage(1), 500),
+      setTimeout(() => setStage(2), 1000),
+      setTimeout(() => setDone(true), 1500),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
