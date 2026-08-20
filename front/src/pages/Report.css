@@ -431,6 +431,43 @@
   color: var(--text-primary);
 }
 
+.self-report-comparison {
+  margin-bottom: 26px;
+  padding: 22px 24px;
+  border-color: rgba(226, 160, 201, 0.5);
+  background: linear-gradient(135deg, var(--surface-solid), var(--accent-pink-soft));
+}
+.self-report-comparison-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.self-report-comparison-kicker {
+  color: var(--accent-pink);
+  font-size: 11px;
+  font-weight: 800;
+}
+.self-report-comparison h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.self-report-comparison p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.self-report-comparison-note {
+  display: block;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
 .trend-card {
   margin-bottom: 26px;
 }

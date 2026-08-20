@@ -6,8 +6,10 @@ import {
   sendMessage as sendMessageApi,
   openMessageStream,
 } from '../api/consultations';
+import { listRelationships } from '../api/relationships';
 import { fetchSupportResources } from '../api/supportResources';
 import { avatarGradientFor, initialsOf } from '../utils/avatar';
+import { pointImageFor } from '../utils/pointImage';
 import { MiniAstronaut } from '../components/Astronaut';
 import { SendIcon, WarnIcon } from '../components/Icons';
 import './Chat.css';
@@ -22,8 +24,17 @@ export default function ChatPage() {
   const [roomsLoading, setRoomsLoading] = useState(true);
 
   useEffect(() => {
-    listConsultations()
-      .then(setRooms)
+    Promise.all([listConsultations(), listRelationships()])
+      .then(([consultations, relationships]) => {
+        const relationshipById = new Map(relationships.map((relationship) => [relationship.id, relationship]));
+        setRooms(consultations.map((consultation) => ({
+          ...consultation,
+          relationship: {
+            ...consultation.relationship,
+            ...relationshipById.get(consultation.relationship.id),
+          },
+        })));
+      })
       .finally(() => setRoomsLoading(false));
   }, []);
 
@@ -46,9 +57,13 @@ export default function ChatPage() {
             className={`room-item ${r.id === id ? 'active' : ''}`}
             onClick={() => navigate(`/chat/${r.id}`)}
           >
-            <div className="room-avatar" style={{ background: avatarGradientFor(r.relationship.id) }}>
-              {r.relationship.initial || initialsOf(r.relationship.name)}
-            </div>
+            {pointImageFor(r.relationship.score) ? (
+              <img className="room-avatar chat-point-avatar" src={pointImageFor(r.relationship.score)} alt="" />
+            ) : (
+              <div className="room-avatar" style={{ background: avatarGradientFor(r.relationship.id) }}>
+                {r.relationship.initial || initialsOf(r.relationship.name)}
+              </div>
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="room-name-row">
                 <span className="room-name">{r.relationship.name}</span>
@@ -153,8 +168,10 @@ function ChatRoom({ consultationId, rooms }) {
   return (
     <div className="chat-main">
       <div className="chat-header">
-        <h2>{room ? `${room.relationship.name}님과의 상담` : '상담'}</h2>
-        <p>{room ? `${room.relationship.name}님과의 대화 데이터 기반 상담` : ''}</p>
+        <div>
+          <h2>{room ? `AI 상담 (feat: ${room.relationship.name}님)` : 'AI 상담'}</h2>
+          <p>{room ? `${room.relationship.name}님과의 대화 데이터를 바탕으로 관계를 함께 살펴봐요` : ''}</p>
+        </div>
       </div>
 
       <div className="chat-scroll" ref={scrollRef}>

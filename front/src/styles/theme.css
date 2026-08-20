@@ -167,8 +167,13 @@ button.link-quiet {
   color: #241542;
 }
 .point-avatar {
+  display: block;
   object-fit: contain;
   object-position: center;
+}
+.small-point-avatar {
+  width: 28px;
+  height: 28px;
 }
 
 .score-delta {

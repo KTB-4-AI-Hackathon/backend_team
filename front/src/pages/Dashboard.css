@@ -8,8 +8,8 @@
 .dashboard-ufo {
   position: absolute;
   z-index: 0;
-  top: 300px;
-  left: 50%;
+  top: 0;
+  left: 0;
   width: 48px;
   height: 48px;
   object-fit: contain;
@@ -17,45 +17,15 @@
   pointer-events: none;
   will-change: transform;
   transform-origin: center;
-  animation: ufo-cruise 62s ease-in-out infinite;
 }
 .page-head,
 .dash-grid {
   position: relative;
   z-index: 1;
 }
-@keyframes ufo-cruise {
-  0% {
-    transform: translate3d(42vw, -110px, 0) rotate(-11deg) scale(0.42);
-  }
-  12% {
-    transform: translate3d(25vw, -210px, 0) rotate(7deg) scale(0.58);
-  }
-  26% {
-    transform: translate3d(-4vw, -130px, 0) rotate(-4deg) scale(1.02);
-  }
-  39% {
-    transform: translate3d(-38vw, 20px, 0) rotate(10deg) scale(0.5);
-  }
-  53% {
-    transform: translate3d(-19vw, 185px, 0) rotate(-7deg) scale(0.65);
-  }
-  67% {
-    transform: translate3d(16vw, 245px, 0) rotate(5deg) scale(0.38);
-  }
-  81% {
-    transform: translate3d(38vw, 95px, 0) rotate(-8deg) scale(1.05);
-  }
-  92% {
-    transform: translate3d(19vw, -40px, 0) rotate(4deg) scale(0.54);
-  }
-  100% {
-    transform: translate3d(42vw, -110px, 0) rotate(-11deg) scale(0.42);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .dashboard-ufo {
-    animation: none;
+    transform: translate3d(50%, 180px, 0) scale(0.7) !important;
   }
 }
 

@@ -61,7 +61,7 @@
 .brand-tag {
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: 1px;
+  margin-top: 4px;
   white-space: nowrap;
 }
 .sidebar-toggle {
@@ -298,7 +298,7 @@
 
 .brand-name-img {
   display: block;
-  height: 14px;
+  height: 17px;
   width: auto;
   margin-top: 2px;
   image-rendering: pixelated;
