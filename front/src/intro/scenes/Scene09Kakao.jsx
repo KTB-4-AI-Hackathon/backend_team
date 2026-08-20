@@ -18,8 +18,8 @@ export default function Scene09Kakao() {
               <div className="kko-bubble me">
                 <TypeText
                   text="나 최근에.. 우리 관계가 조금 권태기인 것 같아. 같이 한강 가서 이야기해볼까?"
-                  delay={120}
-                  speed={26}
+                  delay={150}
+                  speed={40}
                 />
               </div>
             </div>

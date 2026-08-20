@@ -19,16 +19,16 @@ import './intro.css';
 export const INTRO_PLAYED_KEY = 'introPlayed';
 
 const SCENES = [
-  { id: 'login', dur: 900, stage: null, Comp: Scene01Login },
-  { id: 'dashboard', dur: 900, stage: null, Comp: Scene02Dashboard },
-  { id: 'form', dur: 1100, stage: '인물 등록', Comp: Scene03Form },
-  { id: 'upload', dur: 1200, stage: '대화 업로드', Comp: Scene04Upload },
-  { id: 'checkin', dur: 900, stage: '체크인', Comp: Scene05Checkin },
-  { id: 'analysis', dur: 1500, stage: 'AI 분석', Comp: Scene06Analysis },
-  { id: 'report', dur: 1200, stage: '리포트', Comp: Scene07Report },
-  { id: 'chat', dur: 2000, stage: 'AI 상담', Comp: Scene08Chat },
-  { id: 'kakao', dur: 1900, stage: '실제 대화', Comp: Scene09Kakao },
-  { id: 'logo', dur: 1500, stage: null, Comp: Scene10Logo },
+  { id: 'login', dur: 1300, stage: null, Comp: Scene01Login },
+  { id: 'dashboard', dur: 1300, stage: null, Comp: Scene02Dashboard },
+  { id: 'form', dur: 1700, stage: '인물 등록', Comp: Scene03Form },
+  { id: 'upload', dur: 1800, stage: '대화 업로드', Comp: Scene04Upload },
+  { id: 'checkin', dur: 1500, stage: '체크인', Comp: Scene05Checkin },
+  { id: 'analysis', dur: 2300, stage: 'AI 분석', Comp: Scene06Analysis },
+  { id: 'report', dur: 2200, stage: '리포트', Comp: Scene07Report },
+  { id: 'chat', dur: 3600, stage: 'AI 상담', Comp: Scene08Chat },
+  { id: 'kakao', dur: 3400, stage: '실제 대화', Comp: Scene09Kakao },
+  { id: 'logo', dur: 3000, stage: null, Comp: Scene10Logo },
 ];
 
 // 개발용: /intro?scene=<id> 로 특정 장면을 고정해 미세 조정할 수 있다.

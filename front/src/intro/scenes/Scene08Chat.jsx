@@ -35,7 +35,7 @@ export default function Scene08Chat() {
             <div className="chat-col">
               <div className="bubble-row user">
                 <div className="bubble">
-                  <TypeText text="요즘 권태기인 것 같아.. 대화 분석 결과는 어때?" delay={100} speed={30} />
+                  <TypeText text="요즘 권태기인 것 같아.. 대화 분석 결과는 어때?" delay={150} speed={48} />
                 </div>
               </div>
               <div className="bubble-row ai intro-ai-think">
