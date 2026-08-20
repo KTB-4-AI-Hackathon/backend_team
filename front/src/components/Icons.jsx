@@ -174,3 +174,23 @@ export function PixelInfoIcon(props) {
     </svg>
   );
 }
+
+export function GuideIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <path d="M12 5.5C10.4 4.2 8.2 3.6 5.5 3.6c-.6 0-1 .4-1 1v13c0 .6.4 1 1 1 2.7 0 4.9.6 6.5 1.9 1.6-1.3 3.8-1.9 6.5-1.9.6 0 1-.4 1-1v-13c0-.6-.4-1-1-1-2.7 0-4.9.6-6.5 1.9z" />
+      <path d="M12 5.5v15" />
+    </svg>
+  );
+}
+
+export function PixelPlayIcon(props) {
+  return (
+    <svg viewBox="0 0 12 12" fill="currentColor" shapeRendering="crispEdges" {...props}>
+      <rect x="2" y="2" width="2" height="8" />
+      <rect x="4" y="3" width="2" height="6" />
+      <rect x="6" y="4" width="2" height="4" />
+      <rect x="8" y="5" width="2" height="2" />
+    </svg>
+  );
+}

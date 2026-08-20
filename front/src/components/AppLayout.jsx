@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon } from './Icons';
+import { LogoMark, DashboardIcon, PersonIcon, ChatIcon, ChevronsLeftIcon, GuideIcon } from './Icons';
 import userLogo from '../assets/images/UserLogo.png';
 import wordmark from '../assets/images/wouldu-wordmark.png';
 import './AppLayout.css';
@@ -69,6 +69,10 @@ export default function AppLayout() {
           <NavLink to="/chat" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="AI 챗봇">
             <ChatIcon />
             <span className="nav-label">AI 챗봇</span>
+          </NavLink>
+          <NavLink to="/guide" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="사용 가이드">
+            <GuideIcon />
+            <span className="nav-label">사용 가이드</span>
           </NavLink>
         </nav>
 
