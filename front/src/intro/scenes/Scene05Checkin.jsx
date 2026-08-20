@@ -9,10 +9,10 @@ export default function Scene05Checkin() {
   const [q2, setQ2] = useState(5);
   useEffect(() => {
     const timers = [
-      setTimeout(() => setQ1(3), 350),
-      setTimeout(() => setQ1(2), 550),
-      setTimeout(() => setQ2(4), 800),
-      setTimeout(() => setQ2(3), 1000),
+      setTimeout(() => setQ1(3), 450),
+      setTimeout(() => setQ1(2), 700),
+      setTimeout(() => setQ2(4), 1050),
+      setTimeout(() => setQ2(3), 1350),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
