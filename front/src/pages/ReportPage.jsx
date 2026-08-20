@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { listRelationships, getRelationship } from '../api/relationships';
 import { fetchReport } from '../api/reports';
@@ -10,7 +10,7 @@ import RadarChart from '../components/charts/RadarChart';
 import TrendLineChart from '../components/charts/TrendLineChart';
 import Astronaut from '../components/Astronaut';
 import NewPersonModal, { useNewPersonModal } from '../components/NewPersonModal';
-import { SearchIcon, PlusIcon, QuoteIcon, ChatIcon } from '../components/Icons';
+import { SearchIcon, PlusIcon, QuoteIcon, ChatIcon, PixelInfoIcon } from '../components/Icons';
 import './Report.css';
 
 export default function ReportPage() {
@@ -146,6 +146,47 @@ export default function ReportPage() {
   );
 }
 
+function PrqcInfoTip() {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleOutside(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    window.addEventListener('mousedown', handleOutside);
+    return () => window.removeEventListener('mousedown', handleOutside);
+  }, [open]);
+
+  return (
+    <div className="prqc-info" ref={wrapRef}>
+      <button
+        type="button"
+        className={`pixel-info-btn${open ? ' is-open' : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="PRQC 설명 보기"
+      >
+        <PixelInfoIcon />
+      </button>
+      {open && (
+        <div className="pixel-tooltip" role="note">
+          PRQC는 만족·헌신·친밀·신뢰·열정·사랑 6가지 요소로 관계의 질을 측정하는 지표예요 :{' '}
+          <a
+            className="pixel-tooltip-link"
+            href="https://journals.sagepub.com/doi/10.1177/0146167200265007"
+            target="_blank"
+            rel="noreferrer"
+          >
+            링크 ↗
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReportBody({ report, onAddData, onConsult, consultLoading }) {
   const up = (report.overall.change ?? 0) >= 0;
   const prqcValues = PRQC_ORDER.map((k) => report.prqc[k]);
@@ -211,7 +252,10 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         </div>
 
         <div className="card prqc-card">
-          <h3>PRQC 관계 품질 6요소</h3>
+          <div className="card-title-row">
+            <h3>PRQC 관계 품질 6요소</h3>
+            <PrqcInfoTip />
+          </div>
           <RadarChart
             values={prqcValues}
             labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])}
