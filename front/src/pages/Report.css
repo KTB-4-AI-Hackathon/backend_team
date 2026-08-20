@@ -179,6 +179,28 @@
   align-items: center;
   gap: 7px;
   min-height: 17px;
+  border-radius: 6px;
+  outline: none;
+  transition: opacity 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+.prqc-mini-row:focus-visible {
+  background: rgba(165, 149, 232, 0.14);
+}
+.prqc-mini.has-active .prqc-mini-row:not(.is-active) {
+  opacity: 0.42;
+}
+.prqc-mini-row.is-active {
+  color: var(--text-primary);
+}
+.prqc-mini-row.is-active .prqc-mini-label,
+.prqc-mini-row.is-active .prqc-mini-score {
+  color: var(--accent-pink);
+}
+.prqc-mini-row.is-active .prqc-mini-track {
+  background: rgba(165, 149, 232, 0.28);
+}
+.prqc-mini-row.is-active .prqc-mini-fill {
+  box-shadow: 0 0 8px rgba(226, 160, 201, 0.72);
 }
 .prqc-mini-label {
   font-size: 10px;
@@ -235,6 +257,45 @@
   transform-origin: center;
   animation: radar-point-in 280ms ease-out 360ms both;
 }
+.radar-axis,
+.radar-label,
+.radar-data-point {
+  transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+}
+.radar-label {
+  cursor: pointer;
+  outline: none;
+}
+.radar-chart.has-active .radar-axis:not(.is-active),
+.radar-chart.has-active .radar-label:not(.is-active),
+.radar-chart.has-active .radar-data-point:not(.is-active) {
+  opacity: 0.36;
+}
+.radar-axis.is-active {
+  stroke: var(--accent-lavender);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 3px rgba(165, 149, 232, 0.78));
+}
+.radar-label.is-active {
+  fill: var(--accent-pink);
+  filter: drop-shadow(0 0 3px rgba(226, 160, 201, 0.65));
+}
+.radar-data-point.is-active {
+  filter: drop-shadow(0 0 4px rgba(226, 160, 201, 0.9));
+}
+.radar-focus-ring {
+  fill: none;
+  stroke: var(--accent-lavender);
+  stroke-width: 1.5;
+  opacity: 0.9;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-focus-ring 800ms ease-out infinite;
+}
+@keyframes radar-focus-ring {
+  0% { transform: scale(0.72); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
 @keyframes radar-chart-enter {
   from {
     opacity: 0;
@@ -273,7 +334,8 @@
 @media (prefers-reduced-motion: reduce) {
   .radar-chart,
   .radar-data-area,
-  .radar-data-point {
+  .radar-data-point,
+  .radar-focus-ring {
     animation: none;
   }
 }

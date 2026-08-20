@@ -12,7 +12,7 @@ function polar(r, i, n) {
   return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
 }
 
-export default function RadarChart({ values, labels }) {
+export default function RadarChart({ values, labels, activeIndex = null, onActiveChange }) {
   const n = values.length;
   const rings = [0.25, 0.5, 0.75, 1].map((f, ri) => {
     const pts = Array.from({ length: n }, (_, i) => polar(maxR * f, i, n).join(',')).join(' ');
@@ -22,10 +22,13 @@ export default function RadarChart({ values, labels }) {
   });
 
   const axes = Array.from({ length: n }, (_, i) => {
-    const [x, y] = polar(maxR, i, n);
+    // Axis guides stop at their actual score point instead of extending past it.
+    const score = Math.max(0, Math.min(100, values[i] ?? 0));
+    const [x, y] = polar((maxR * score) / 100, i, n);
     return (
       <line
         key={i}
+        className={`radar-axis${activeIndex === i ? ' is-active' : ''}`}
         x1={cx}
         y1={cy}
         x2={x.toFixed(1)}
@@ -42,7 +45,7 @@ export default function RadarChart({ values, labels }) {
   const dataPoly = dataPts.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg className="radar-chart" viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
+    <svg className={`radar-chart${activeIndex !== null ? ' has-active' : ''}`} viewBox="0 0 286 276" style={{ width: '100%', height: 'auto' }}>
       {rings}
       <polygon
         points={cutPts}
@@ -63,15 +66,19 @@ export default function RadarChart({ values, labels }) {
       {dataPts.map((p, i) => {
         const low = values[i] < ATTENTION_THRESHOLD;
         return (
-          <circle
-            key={i}
-            className="radar-data-point"
-            cx={p[0].toFixed(1)}
-            cy={p[1].toFixed(1)}
-            r="4"
-            fill={low ? 'var(--accent-amber)' : 'var(--accent-pink)'}
-            stroke={low ? '#2a1638' : 'none'}
-          />
+          <g key={i}>
+            <circle
+              className={`radar-data-point${activeIndex === i ? ' is-active' : ''}`}
+              cx={p[0].toFixed(1)}
+              cy={p[1].toFixed(1)}
+              r="4"
+              fill={low ? 'var(--accent-amber)' : 'var(--accent-pink)'}
+              stroke={low ? '#2a1638' : 'none'}
+            />
+            {activeIndex === i && (
+              <circle className="radar-focus-ring" cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r="8" />
+            )}
+          </g>
         );
       })}
       {labels.map((label, i) => {
@@ -80,6 +87,7 @@ export default function RadarChart({ values, labels }) {
         return (
           <text
             key={label}
+            className={`radar-label${activeIndex === i ? ' is-active' : ''}`}
             x={x.toFixed(1)}
             y={y.toFixed(1)}
             textAnchor={anchor}
@@ -87,6 +95,12 @@ export default function RadarChart({ values, labels }) {
             fontSize="11.5"
             fontWeight="700"
             fill="var(--text-secondary)"
+            role="button"
+            tabIndex="0"
+            onMouseEnter={() => onActiveChange?.(i)}
+            onMouseLeave={() => onActiveChange?.(null)}
+            onFocus={() => onActiveChange?.(i)}
+            onBlur={() => onActiveChange?.(null)}
           >
             {label}
           </text>

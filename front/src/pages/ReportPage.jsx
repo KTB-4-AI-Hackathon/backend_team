@@ -150,6 +150,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
   const up = (report.overall.change ?? 0) >= 0;
   const prqcValues = PRQC_ORDER.map((k) => report.prqc[k]);
   const hasTrend = report.trend.length >= 2;
+  const [activePrqcIndex, setActivePrqcIndex] = useState(null);
 
   return (
     <>
@@ -184,12 +185,20 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
               )}
             </div>
           </div>
-          <div className="prqc-mini" aria-label="PRQC 관계 품질 점수">
+          <div className={`prqc-mini${activePrqcIndex !== null ? ' has-active' : ''}`} aria-label="PRQC 관계 품질 점수">
             <div className="prqc-mini-title">PRQC 관계 품질</div>
-            {PRQC_ORDER.map((key) => {
+            {PRQC_ORDER.map((key, index) => {
               const score = Math.max(0, Math.min(100, Math.round(report.prqc[key] ?? 0)));
               return (
-                <div className="prqc-mini-row" key={key}>
+                <div
+                  className={`prqc-mini-row${activePrqcIndex === index ? ' is-active' : ''}`}
+                  key={key}
+                  tabIndex="0"
+                  onMouseEnter={() => setActivePrqcIndex(index)}
+                  onMouseLeave={() => setActivePrqcIndex(null)}
+                  onFocus={() => setActivePrqcIndex(index)}
+                  onBlur={() => setActivePrqcIndex(null)}
+                >
                   <span className="prqc-mini-label">{PRQC_LABELS[key]}</span>
                   <div className="prqc-mini-track" aria-hidden="true">
                     <span className="prqc-mini-fill" style={{ width: `${score}%` }} />
@@ -203,7 +212,12 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
 
         <div className="card prqc-card">
           <h3>PRQC 관계 품질 6요소</h3>
-          <RadarChart values={prqcValues} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
+          <RadarChart
+            values={prqcValues}
+            labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])}
+            activeIndex={activePrqcIndex}
+            onActiveChange={setActivePrqcIndex}
+          />
           <div className="radar-legend">
             <div className="radar-legend-item">
               <span className="radar-legend-swatch" style={{ background: 'var(--accent-pink)' }} />
