@@ -13,11 +13,10 @@ import Scene06Analysis from './scenes/Scene06Analysis';
 import Scene07Report from './scenes/Scene07Report';
 import Scene08Chat from './scenes/Scene08Chat';
 import Scene09Kakao from './scenes/Scene09Kakao';
+import Scene10Logo from './scenes/Scene10Logo';
 import './intro.css';
 
 export const INTRO_PLAYED_KEY = 'introPlayed';
-
-const Ph = ({ label }) => <div className="intro-ph">{label}</div>;
 
 const SCENES = [
   { id: 'login', dur: 1000, stage: null, Comp: Scene01Login },
@@ -29,7 +28,7 @@ const SCENES = [
   { id: 'report', dur: 900, stage: '리포트', Comp: Scene07Report },
   { id: 'chat', dur: 2100, stage: 'AI 상담', Comp: Scene08Chat },
   { id: 'kakao', dur: 2000, stage: '실제 대화', Comp: Scene09Kakao },
-  { id: 'logo', dur: 1500, stage: null, Comp: () => <Ph label="logo" /> },
+  { id: 'logo', dur: 1500, stage: null, Comp: Scene10Logo },
 ];
 
 // 개발용: /intro?scene=<id> 로 특정 장면을 고정해 미세 조정할 수 있다.
@@ -106,6 +105,7 @@ export default function IntroPage() {
           <SceneComp />
         </div>
       </div>
+      {scene.id === 'logo' && <div className="s10-fade" />}
     </div>
   );
 }
