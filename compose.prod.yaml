@@ -1,4 +1,4 @@
-# EC2 1대에 컨테이너 4개를 올리는 배포 오버레이.
+# EC2 1대에 컨테이너 5개(front·backend·ai·postgres·mongo)를 올리는 배포 오버레이.
 #
 #   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 #
@@ -10,7 +10,7 @@
 # 도메인/비밀값은 서버의 .env 에서 읽는다. .env.prod.example 참고.
 
 # 메모리 제한은 t3.medium(4GB) 기준. t3.small(2GB)이면 .env 에서 줄인다.
-#   BACKEND_MEM=900m MONGO_MEM=600m POSTGRES_MEM=256m FRONT_MEM=64m
+#   BACKEND_MEM=900m MONGO_MEM=600m POSTGRES_MEM=256m FRONT_MEM=64m AI_MEM=256m
 # 백엔드 JVM은 -XX:MaxRAMPercentage=75 라서, 제한이 없으면 호스트 RAM의 75%를
 # 힙으로 잡아 다른 컨테이너를 굶긴다. mem_limit 이 반드시 있어야 한다.
 
@@ -37,6 +37,15 @@ services:
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:?FRONTEND_BASE_URL을 .env에 설정하세요}
       # https로 서비스하면 true. http면 반드시 false여야 세션이 붙는다.
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+
+  ai:
+    # 로컬에서는 opt-in profile 이지만, 배포에서는 항상 뜬다.
+    profiles: !reset []
+    restart: unless-stopped
+    mem_limit: ${AI_MEM:-384m}
+    environment:
+      # LLM(Gemini) 호출에 필수. 없으면 분석 요청이 전부 실패하므로 기동 전에 잡는다.
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:?GOOGLE_API_KEY를 .env에 설정하세요}
 
   front:
     # dev 빌드(vite)와 이미지 태그가 겹치면 --build 없이 스택을 바꿀 때

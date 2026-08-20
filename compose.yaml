@@ -59,7 +59,8 @@ services:
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-local-client-secret}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
       AI_MODE: ${AI_MODE:-stub}
-      AI_BASE_URL: ${AI_BASE_URL:-http://localhost:8000}
+      # ai 컨테이너를 같이 띄우면(--profile ai) 서비스 이름으로 통신한다.
+      AI_BASE_URL: ${AI_BASE_URL:-http://ai:8000}
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-local-ai-token}
       # 로컬은 http라 secure 쿠키를 쓰면 세션이 안 붙는다.
       SESSION_COOKIE_SECURE: "false"
@@ -74,6 +75,29 @@ services:
       timeout: 5s
       retries: 20
       start_period: 40s
+
+  # AI 분석 서버 (FastAPI). 백엔드가 AI_MODE=http 일 때만 호출하는 내부 서비스라
+  # 호스트 포트는 열지 않는다. 저장소가 분리되어 있어 이 레포 *옆에* 클론해야 한다:
+  #   git clone https://github.com/KTB-4-AI-Hackathon/AI_Team.git ../AI_Team
+  # 로컬에서는 opt-in (../AI_Team 없는 팀원의 up 이 깨지지 않도록 profile 처리):
+  #   docker compose --profile ai up -d --build
+  # 배포에서는 compose.prod.yaml 이 profile을 해제해 항상 뜬다.
+  ai:
+    profiles: ["ai"]
+    build:
+      context: ../AI_Team
+    environment:
+      # 백엔드의 AI_SERVICE_TOKEN 과 같은 값이어야 인증이 통과된다. 변수 하나로 양쪽에 주입.
+      AI_INTERNAL_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-local-ai-token}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      TZ: Asia/Seoul
+    healthcheck:
+      # 이미지에 curl 이 없으므로 파이썬 표준 라이브러리로 확인한다.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   front:
     build:
