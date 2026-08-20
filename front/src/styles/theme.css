@@ -9,7 +9,7 @@
   --border-strong: rgba(196, 182, 255, 0.3);
   --text-primary: #f4f0fb;
   --text-secondary: #b9aed6;
-  --text-muted: #8078a0;
+  --text-muted: #948cbd;
   --accent-pink: #e2a0c9;
   --accent-pink-strong: #d885bb;
   --accent-pink-ink: #2a1638;
@@ -55,6 +55,7 @@ h1, h2, h3, h4, p {
 }
 button {
   font-family: inherit;
+  color: inherit;
 }
 ::selection {
   background: rgba(226, 160, 201, 0.35);

@@ -276,7 +276,7 @@ export default function NewPersonModal({ open, onClose, mode = 'create', relatio
                 </div>
 
                 {formError && <p className="checkin-note" style={{ color: 'var(--accent-coral)' }}>{formError}</p>}
-                <p className="checkin-note">이 질문은 앞으로 매주 짧게 다시 물어볼 거예요</p>
+                <p className="checkin-note">이 질문은 앞으로 매주 다시 물어볼 거예요</p>
               </div>
             )}
 
