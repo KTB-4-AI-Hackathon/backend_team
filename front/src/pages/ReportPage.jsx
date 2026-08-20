@@ -175,7 +175,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
           <div className="gauge-wrap">
             <Gauge score={report.overall.score} />
             <div className="gauge-center">
-              <div className="gauge-score">{report.overall.score}</div>
+              <AnimatedScore score={report.overall.score} />
               <div className="gauge-max">/ 100</div>
               {report.overall.change != null && (
                 <div className={`gauge-delta score-delta ${up ? 'up' : 'down'}`}>
@@ -252,6 +252,39 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
     </>
   );
+}
+
+function AnimatedScore({ score }) {
+  const target = Math.round(Number(score) || 0);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      setDisplayScore(target);
+      return undefined;
+    }
+
+    const duration = 950;
+    let frame;
+    let start;
+
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setDisplayScore(Math.round(target * eased));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    }
+
+    frame = window.requestAnimationFrame(() => {
+      setDisplayScore(0);
+      start = performance.now();
+      frame = window.requestAnimationFrame(tick);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [target]);
+
+  return <div className="gauge-score" aria-label={`종합 온도 ${target}점`}>{displayScore}</div>;
 }
 
 function NoReportState({ relationship, onAddData }) {

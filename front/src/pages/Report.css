@@ -9,6 +9,11 @@
   padding: 22px 16px;
   height: 100vh;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.people-panel::-webkit-scrollbar {
+  display: none;
 }
 .search-box {
   display: flex;
@@ -232,6 +237,7 @@
     animation: none;
   }
 }
+
 .radar-legend-item {
   display: flex;
   align-items: center;
