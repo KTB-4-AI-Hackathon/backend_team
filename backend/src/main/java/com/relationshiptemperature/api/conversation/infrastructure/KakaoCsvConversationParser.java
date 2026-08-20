@@ -51,6 +51,15 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
 
     @Override
     public ParsedConversation parse(InputStream inputStream, String selfParticipantName) throws IOException {
+        return parse(inputStream, selfParticipantName, false);
+    }
+
+    @Override
+    public ParsedConversation parse(
+            InputStream inputStream,
+            String selfParticipantName,
+            boolean testFixture
+    ) throws IOException {
         try {
             String self = normalizedName(selfParticipantName);
             List<RawMessage> rawMessages = new ArrayList<>();
@@ -78,7 +87,7 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
                     ));
                 }
             }
-            return parsedConversation(rawMessages, self);
+            return parsedConversation(rawMessages, self, testFixture);
         } catch (ApiException exception) {
             throw exception;
         } catch (DateTimeException | IllegalArgumentException exception) {
@@ -145,7 +154,11 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
         return value == null || value.isBlank();
     }
 
-    private ParsedConversation parsedConversation(List<RawMessage> rawMessages, String selfParticipantName) {
+    private ParsedConversation parsedConversation(
+            List<RawMessage> rawMessages,
+            String requestedSelfParticipantName,
+            boolean testFixture
+    ) {
         Set<String> participants = new LinkedHashSet<>();
         for (RawMessage message : rawMessages) {
             participants.add(message.senderName());
@@ -153,9 +166,12 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
         if (participants.size() > 2) {
             throw new ConversationParseException(ErrorCode.GROUP_CHAT_NOT_SUPPORTED);
         }
-        if (participants.size() != 2 || !participants.contains(selfParticipantName)) {
+        if (participants.size() != 2) {
             throw new ConversationParseException(ErrorCode.SELF_PARTICIPANT_MISMATCH);
         }
+        String selfParticipantName = resolveSelfParticipantName(
+                participants, requestedSelfParticipantName, testFixture
+        );
         String otherParticipantName = participants.stream()
                 .filter(name -> !name.equals(selfParticipantName))
                 .findFirst()
@@ -171,6 +187,22 @@ public class KakaoCsvConversationParser implements KakaoConversationParser {
             ));
         }
         return new ParsedConversation(messages, selfParticipantName, otherParticipantName);
+    }
+
+    private String resolveSelfParticipantName(
+            Set<String> participants,
+            String requestedSelfParticipantName,
+            boolean testFixture
+    ) {
+        if (participants.contains(requestedSelfParticipantName)) {
+            return requestedSelfParticipantName;
+        }
+        if (!testFixture) {
+            if (!participants.contains("본인")) {
+                throw new ConversationParseException(ErrorCode.SELF_PARTICIPANT_MISMATCH);
+            }
+        }
+        return participants.contains("본인") ? "본인" : participants.iterator().next();
     }
 
     private static final Pattern INVISIBLE = Pattern.compile("[\\u200B-\\u200D\\uFEFF]");
