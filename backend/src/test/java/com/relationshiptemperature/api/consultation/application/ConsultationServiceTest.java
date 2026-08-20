@@ -72,6 +72,23 @@ class ConsultationServiceTest {
     }
 
     @Test
+    void reusesLatestConsultationForSameUserAndRelationship() {
+        UUID userId = UUID.randomUUID();
+        UUID relationshipId = UUID.randomUUID();
+        Consultation existing = new Consultation(userId, relationshipId, UUID.randomUUID());
+        when(consultationRepository.findFirstByUserIdAndRelationshipIdOrderByUpdatedAtDesc(
+                userId.toString(), relationshipId.toString()
+        )).thenReturn(Optional.of(existing));
+
+        Consultation result = service.create(userId, relationshipId);
+
+        assertThat(result).isSameAs(existing);
+        verify(relationshipService).getOwned(userId, relationshipId);
+        verify(reportService, org.mockito.Mockito.never()).latest(userId, relationshipId);
+        verify(messageRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void storesMessagesAndBuildsAiContextFromPinnedReportEvidenceAndHistory() {
         UUID userId = UUID.randomUUID();
         UUID relationshipId = UUID.randomUUID();

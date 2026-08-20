@@ -9,5 +9,9 @@ public interface ConsultationRepository extends MongoRepository<Consultation, St
 
     Optional<Consultation> findByIdAndUserId(String id, String userId);
 
+    Optional<Consultation> findFirstByUserIdAndRelationshipIdOrderByUpdatedAtDesc(
+            String userId, String relationshipId
+    );
+
     List<Consultation> findAllByUserIdOrderByUpdatedAtDesc(String userId);
 }

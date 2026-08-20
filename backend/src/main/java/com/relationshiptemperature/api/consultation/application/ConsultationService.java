@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +54,13 @@ public class ConsultationService {
 
     public Consultation create(UUID userId, UUID relationshipId) {
         relationshipService.getOwned(userId, relationshipId);
+        Optional<Consultation> existing = consultationRepository
+                .findFirstByUserIdAndRelationshipIdOrderByUpdatedAtDesc(
+                        userId.toString(), relationshipId.toString()
+                );
+        if (existing.isPresent()) {
+            return existing.get();
+        }
         RelationshipReport report = reportService.latest(userId, relationshipId);
         Consultation consultation = consultationRepository.save(new Consultation(userId, relationshipId, report.getId()));
         ChatMessage initial = messageRepository.save(ChatMessage.assistant(
