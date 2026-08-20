@@ -324,14 +324,13 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       {report.selfReportComparison?.trim() && (
         <section className="card self-report-comparison" aria-labelledby="self-report-comparison-title">
           <div className="self-report-comparison-heading">
-            <span className="self-report-comparison-kicker">체크인과 대화 분석</span>
-            <h3 id="self-report-comparison-title">내가 느낀 관계와 대화에서 보인 모습</h3>
+            <h3 id="self-report-comparison-title">내가 느낀 관계와 대화 속 관계</h3>
           </div>
-          <p>
+          <p className="self-report-comparison-result">
             {report.selfReportComparison}
           </p>
           <span className="self-report-comparison-note">
-            이 내용은 자기보고와 대화에서 관찰된 신호를 비교한 참고 설명이에요.
+            두 결과가 다르더라도 어느 한쪽이 틀렸다는 의미는 아니에요. 관계를 여러 관점에서 이해하기 위한 참고로 활용해 주세요.
           </span>
         </section>
       )}
