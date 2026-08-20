@@ -3,6 +3,7 @@ package com.relationshiptemperature.api.analysis.application;
 import com.relationshiptemperature.api.relationship.domain.RelationshipType;
 import com.relationshiptemperature.api.report.domain.RelationshipReport.PrqcScores;
 import com.relationshiptemperature.api.report.domain.ReportEvidence.Metric;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +26,8 @@ public interface AiAnalysisClient {
     record AnalysisContext(
             UserContext user,
             RelationshipContext relationship,
-            CheckInContext checkIn
+            CurrentAnalysisContext current,
+            List<HistoricalAnalysisContext> history
     ) {}
 
     record UserContext(UUID userId, String displayName, String timezone) {}
@@ -37,9 +39,42 @@ public interface AiAnalysisClient {
             String status
     ) {}
 
-    record CheckInContext(UUID checkInId, LocalDate weekStart, List<CheckInAnswerContext> answers) {}
+    /**
+     * The current conversation contents are sent in the multipart {@code file} part.  This object
+     * identifies that conversation and carries the check-in scores submitted with this analysis.
+     */
+    record CurrentAnalysisContext(UUID conversationFileId, CheckInContext checkIn) {}
+
+    record CheckInContext(UUID checkInId, LocalDate weekStart, Instant inputAt, List<CheckInAnswerContext> answers) {}
 
     record CheckInAnswerContext(String questionCode, int score) {}
+
+    /** A prior, successfully analysed relationship snapshot, ordered by check-in input date. */
+    record HistoricalAnalysisContext(
+            Instant inputAt,
+            ConversationContext conversation,
+            CheckInContext checkIn,
+            PreviousAnalysisContext analysis
+    ) {}
+
+    record ConversationContext(UUID conversationFileId, List<ConversationMessageContext> messages) {}
+
+    record ConversationMessageContext(String sender, Instant sentAt, String text) {}
+
+    /**
+     * The durable AI-analysis result available for a previous run. There is no separate report
+     * narrative today; the evidence summaries are the stored analysis text.
+     */
+    record PreviousAnalysisContext(
+            UUID reportId,
+            Instant analyzedAt,
+            int overallScore,
+            Integer scoreChange,
+            PrqcScores prqc,
+            List<AnalysisEvidenceContext> evidences
+    ) {}
+
+    record AnalysisEvidenceContext(String component, int score, String summary, Metric metric) {}
 
     record AnalysisResult(
             String modelVersion,

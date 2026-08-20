@@ -29,6 +29,12 @@ public interface RelationshipReportRepository extends JpaRepository<Relationship
             LocalDate to
     );
 
+    List<RelationshipReport> findAllByRelationshipIdAndUserIdAndWeekStartBeforeOrderByWeekStartAscAnalyzedAtAsc(
+            UUID relationshipId,
+            UUID userId,
+            LocalDate weekStart
+    );
+
     @Query("""
             SELECT report
             FROM RelationshipReport report

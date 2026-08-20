@@ -143,7 +143,9 @@ Object Storage가 없는 MVP 환경에서는 같은 엔드포인트에 `multipar
 
 ### 5.2 분석 컨텍스트
 
-AI는 대화 파일만으로 단정하지 않도록, 백엔드가 아래의 **최소 필요 컨텍스트**도 함께 전달한다.
+AI는 대화 파일만으로 단정하지 않고 관계의 변화를 해석할 수 있도록, 백엔드는 현재
+분석 스냅샷과 이전 분석 이력을 함께 전달한다. `history`는 **이전 체크인 입력 시각
+(`inputAt`) 오름차순**이며, 현재 분석보다 이전 주차의 성공한 분석만 포함한다.
 
 ```json
 {
@@ -158,17 +160,49 @@ AI는 대화 파일만으로 단정하지 않도록, 백엔드가 아래의 **�
     "relationshipType": "FRIEND",
     "status": "ANALYZING"
   },
-  "checkIn": {
-    "checkInId": "0198c8a7-3000-7000-8000-000000000004",
-    "weekStart": "2026-08-17",
-    "answers": [
-      { "questionCode": "RELATIONSHIP_FEELING", "score": 6 },
-      { "questionCode": "CONVERSATION_COMFORT", "score": 4 }
-    ]
-  }
+  "current": {
+    "conversationFileId": "0198c8a7-3000-7000-8000-000000000004",
+    "checkIn": {
+      "checkInId": "0198c8a7-3000-7000-8000-000000000005",
+      "weekStart": "2026-08-17",
+      "inputAt": "2026-08-17T01:00:00Z",
+      "answers": [
+        { "questionCode": "RELATIONSHIP_FEELING", "score": 6 },
+        { "questionCode": "CONVERSATION_COMFORT", "score": 4 }
+      ]
+    }
+  },
+  "history": [
+    {
+      "inputAt": "2026-08-10T01:00:00Z",
+      "conversation": {
+        "conversationFileId": "0198c8a7-3000-7000-8000-000000000006",
+        "messages": [
+          { "sender": "SELF", "sentAt": "2026-08-09T12:00:00Z", "text": "지난 대화 내용" }
+        ]
+      },
+      "checkIn": {
+        "checkInId": "0198c8a7-3000-7000-8000-000000000007",
+        "weekStart": "2026-08-10",
+        "inputAt": "2026-08-10T01:00:00Z",
+        "answers": [{ "questionCode": "RELATIONSHIP_FEELING", "score": 4 }]
+      },
+      "analysis": {
+        "reportId": "0198c8a7-3000-7000-8000-000000000008",
+        "analyzedAt": "2026-08-10T01:02:00Z",
+        "overallScore": 58,
+        "scoreChange": -7,
+        "prqc": { "satisfaction": 55, "commitment": 56, "intimacy": 57, "trust": 58, "passion": 59, "love": 60 },
+        "evidences": [{ "component": "trust", "score": 58, "summary": "응답 간격이 길어졌어요.", "metric": null }]
+      }
+    }
+  ]
 }
 ```
 
+- 현재 대화의 전체 내용은 중복하지 않고 multipart의 `file` (`conversation.ndjson.gz`)에 담는다. `current.conversationFileId`는 이 파일의 식별자다.
+- `history[].conversation.messages`에는 해당 이전 분석에 사용된 정규화 대화(발신자 역할, 발신 시각, 본문)가 담긴다.
+- `history[].analysis.evidences[].summary`가 현재 저장돼 있는 이전 AI 분석 글이다. 별도의 리포트 서술문은 아직 저장하지 않는다.
 - `answers.score`는 1~7 정수이며, 현재 제공 질문은 `RELATIONSHIP_FEELING`, `CONVERSATION_COMFORT`다.
 - AI는 이 정보를 PRQC와 관찰 근거를 해석하는 보조 맥락으로만 사용한다. canonical `overall.score`는 여전히 백엔드가 계산한다.
 - 카카오 식별자, OAuth/세션 토큰, 프로필 이미지 URL은 전달하지 않는다.
@@ -181,7 +215,7 @@ relationshipType: FRIEND
 format: NORMALIZED_NDJSON_GZIP
 formatVersion: conversation-ndjson-1.0.0
 sha256: a878d8f81f41f32c7d1a4748f35e92318f367689632be2f3c9d662e705c4ec9d
-context: {"user":{"userId":"...","displayName":"우","timezone":"Asia/Seoul"},"relationship":{...},"checkIn":{...}}
+context: {"user":{...},"relationship":{...},"current":{"conversationFileId":"...","checkIn":{...}},"history":[...]}
 file: conversation.ndjson.gz
 ```
 
