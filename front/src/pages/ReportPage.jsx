@@ -150,6 +150,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
   const up = (report.overall.change ?? 0) >= 0;
   const prqcValues = PRQC_ORDER.map((k) => report.prqc[k]);
   const hasTrend = report.trend.length >= 2;
+  const [activePrqcIndex, setActivePrqcIndex] = useState(null);
 
   return (
     <>
@@ -170,12 +171,12 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
 
       <div className="report-grid">
-        <div className="card">
+        <div className="card overview-card">
           <h3>종합 온도</h3>
           <div className="gauge-wrap">
-            <Gauge score={report.overall.score} />
+            <Gauge score={report.overall.score} size={216} />
             <div className="gauge-center">
-              <div className="gauge-score">{report.overall.score}</div>
+              <AnimatedScore score={report.overall.score} />
               <div className="gauge-max">/ 100</div>
               {report.overall.change != null && (
                 <div className={`gauge-delta score-delta ${up ? 'up' : 'down'}`}>
@@ -184,14 +185,39 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
               )}
             </div>
           </div>
-          <div className="spark-block">
-            <div className="spark-block-label">{report.overall.statusLabel}</div>
+          <div className={`prqc-mini${activePrqcIndex !== null ? ' has-active' : ''}`} aria-label="PRQC 관계 품질 점수">
+            <div className="prqc-mini-title">PRQC 관계 품질</div>
+            {PRQC_ORDER.map((key, index) => {
+              const score = Math.max(0, Math.min(100, Math.round(report.prqc[key] ?? 0)));
+              return (
+                <div
+                  className={`prqc-mini-row${activePrqcIndex === index ? ' is-active' : ''}`}
+                  key={key}
+                  tabIndex="0"
+                  onMouseEnter={() => setActivePrqcIndex(index)}
+                  onMouseLeave={() => setActivePrqcIndex(null)}
+                  onFocus={() => setActivePrqcIndex(index)}
+                  onBlur={() => setActivePrqcIndex(null)}
+                >
+                  <span className="prqc-mini-label">{PRQC_LABELS[key]}</span>
+                  <div className="prqc-mini-track" aria-hidden="true">
+                    <span className="prqc-mini-fill" style={{ width: `${score}%` }} />
+                  </div>
+                  <strong className="prqc-mini-score">{score}</strong>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="card">
+        <div className="card prqc-card">
           <h3>PRQC 관계 품질 6요소</h3>
-          <RadarChart values={prqcValues} labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])} />
+          <RadarChart
+            values={prqcValues}
+            labels={PRQC_ORDER.map((k) => PRQC_LABELS[k])}
+            activeIndex={activePrqcIndex}
+            onActiveChange={setActivePrqcIndex}
+          />
           <div className="radar-legend">
             <div className="radar-legend-item">
               <span className="radar-legend-swatch" style={{ background: 'var(--accent-pink)' }} />
@@ -205,7 +231,7 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
         </div>
       </div>
 
-      <div className="evidence-row">
+      <div className="evidence-row report-analysis">
         {report.evidences.length > 0 ? (
           report.evidences.slice(0, 2).map((ev) => (
             <div className="evidence-card" key={ev.id}>
@@ -252,6 +278,39 @@ function ReportBody({ report, onAddData, onConsult, consultLoading }) {
       </div>
     </>
   );
+}
+
+function AnimatedScore({ score }) {
+  const target = Math.round(Number(score) || 0);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      setDisplayScore(target);
+      return undefined;
+    }
+
+    const duration = 950;
+    let frame;
+    let start;
+
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setDisplayScore(Math.round(target * eased));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    }
+
+    frame = window.requestAnimationFrame(() => {
+      setDisplayScore(0);
+      start = performance.now();
+      frame = window.requestAnimationFrame(tick);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [target]);
+
+  return <div className="gauge-score" aria-label={`종합 온도 ${target}점`}>{displayScore}</div>;
 }
 
 function NoReportState({ relationship, onAddData }) {

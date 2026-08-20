@@ -1,3 +1,5 @@
+import logoImage from '../assets/images/logo.png';
+
 export function ChevronsLeftIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -38,6 +40,14 @@ export function PlusIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" {...props}>
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
@@ -130,19 +140,13 @@ export function KakaoIcon(props) {
 }
 
 export function LogoMark({ size = 34 }) {
-  const id = 'logoGrad';
   return (
-    <svg width={size} height={size} viewBox="0 0 34 34" fill="none">
-      <circle cx="17" cy="17" r="16" fill={`url(#${id})`} />
-      <ellipse cx="17" cy="17" rx="15" ry="6" stroke="#f4f0fb" strokeOpacity="0.35" fill="none" />
-      <circle cx="26" cy="10" r="1.6" fill="#fff" />
-      <defs>
-        <radialGradient id={id} cx="0.35" cy="0.3" r="0.9">
-          <stop offset="0" stopColor="#f3d9b8" />
-          <stop offset="0.6" stopColor="#e2a0c9" />
-          <stop offset="1" stopColor="#6f5cc4" />
-        </radialGradient>
-      </defs>
-    </svg>
+    <img
+      src={logoImage}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: 'block', flex: 'none' }}
+    />
   );
 }
