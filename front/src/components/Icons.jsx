@@ -157,3 +157,20 @@ export function LogoMark({ size = 34 }) {
     />
   );
 }
+
+export function PixelInfoIcon(props) {
+  return (
+    <svg viewBox="0 0 12 12" fill="currentColor" shapeRendering="crispEdges" {...props}>
+      <rect x="2" y="0" width="8" height="1" />
+      <rect x="2" y="11" width="8" height="1" />
+      <rect x="0" y="2" width="1" height="8" />
+      <rect x="11" y="2" width="1" height="8" />
+      <rect x="1" y="1" width="1" height="1" />
+      <rect x="10" y="1" width="1" height="1" />
+      <rect x="1" y="10" width="1" height="1" />
+      <rect x="10" y="10" width="1" height="1" />
+      <rect x="5" y="3" width="2" height="2" />
+      <rect x="5" y="6" width="2" height="3" />
+    </svg>
+  );
+}
