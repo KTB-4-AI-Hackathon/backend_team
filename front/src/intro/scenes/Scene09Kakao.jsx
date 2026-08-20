@@ -43,6 +43,10 @@ export default function Scene09Kakao() {
               </div>
               <span className="kko-time">오후 9:13</span>
             </div>
+            <div className="kko-row me intro-kko-heart">
+              <span className="kko-time">오후 9:14</span>
+              <div className="kko-heart">❤️</div>
+            </div>
           </div>
           <div className="kko-inputbar">
             <span className="kko-plus">+</span>

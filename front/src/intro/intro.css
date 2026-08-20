@@ -706,14 +706,14 @@
 }
 @keyframes introKkoThink {
   0%,
-  52% {
+  38% {
     opacity: 0;
   }
-  58%,
-  74% {
+  44%,
+  56% {
     opacity: 1;
   }
-  80%,
+  62%,
   100% {
     opacity: 0;
     height: 0;
@@ -725,14 +725,37 @@
 }
 @keyframes introKkoReply {
   0%,
-  78% {
+  60% {
     opacity: 0;
     transform: translateY(10px);
   }
-  88%,
+  68%,
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+.kko-heart {
+  font-size: 52px;
+  line-height: 1;
+}
+.intro-kko-heart {
+  animation: introKkoHeart 4.9s both;
+}
+@keyframes introKkoHeart {
+  0%,
+  82% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  96%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 .kko-inputbar {
