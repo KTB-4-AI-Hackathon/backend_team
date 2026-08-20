@@ -8,6 +8,8 @@ import Scene01Login from './scenes/Scene01Login';
 import Scene02Dashboard from './scenes/Scene02Dashboard';
 import Scene03Form from './scenes/Scene03Form';
 import Scene04Upload from './scenes/Scene04Upload';
+import Scene05Checkin from './scenes/Scene05Checkin';
+import Scene06Analysis from './scenes/Scene06Analysis';
 import './intro.css';
 
 export const INTRO_PLAYED_KEY = 'introPlayed';
@@ -19,8 +21,8 @@ const SCENES = [
   { id: 'dashboard', dur: 1000, stage: null, Comp: Scene02Dashboard },
   { id: 'form', dur: 1200, stage: '인물 등록', Comp: Scene03Form },
   { id: 'upload', dur: 1300, stage: '대화 업로드', Comp: Scene04Upload },
-  { id: 'checkin', dur: 800, stage: '체크인', Comp: () => <Ph label="checkin" /> },
-  { id: 'analysis', dur: 1200, stage: 'AI 분석', Comp: () => <Ph label="analysis" /> },
+  { id: 'checkin', dur: 800, stage: '체크인', Comp: Scene05Checkin },
+  { id: 'analysis', dur: 1200, stage: 'AI 분석', Comp: Scene06Analysis },
   { id: 'report', dur: 900, stage: '리포트', Comp: () => <Ph label="report" /> },
   { id: 'chat', dur: 2100, stage: 'AI 상담', Comp: () => <Ph label="chat" /> },
   { id: 'kakao', dur: 2000, stage: '실제 대화', Comp: () => <Ph label="kakao" /> },

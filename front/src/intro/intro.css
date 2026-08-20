@@ -528,6 +528,163 @@
   }
 }
 
+/* ===== Scene 5: 체크인 ===== */
+.s5-row {
+  margin-bottom: 16px;
+}
+.s5-row p {
+  font-size: 13.5px;
+  margin-bottom: 8px;
+}
+.s5-scores {
+  display: flex;
+  gap: 8px;
+}
+.s5-scores i {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.s5-r1 .hit {
+  animation: s5Hit 0.55s both;
+}
+.s5-r2 .hit {
+  animation: s5Hit 0.55s 0.25s both;
+}
+@keyframes s5Hit {
+  0%,
+  30% {
+    background: transparent;
+    color: var(--text-secondary);
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(0.82);
+  }
+  56%,
+  100% {
+    background: rgba(165, 149, 232, 0.22);
+    color: var(--text-primary);
+    border-color: var(--accent-lavender);
+    transform: scale(1);
+    box-shadow: 0 0 12px rgba(165, 149, 232, 0.4);
+  }
+}
+.s5-go {
+  position: absolute;
+  right: 30px;
+  bottom: 26px;
+}
+.cursor-checkin {
+  animation: cursorCheckin 0.8s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+@keyframes cursorCheckin {
+  0% {
+    transform: translate(470px, 116px);
+  }
+  28% {
+    transform: translate(72px, 76px) scale(1);
+  }
+  36% {
+    transform: translate(72px, 76px) scale(0.72);
+  }
+  44% {
+    transform: translate(114px, 152px) scale(1);
+  }
+  58% {
+    transform: translate(114px, 152px) scale(0.72);
+  }
+  66% {
+    transform: translate(114px, 152px) scale(1);
+  }
+  84% {
+    transform: translate(650px, 262px) scale(1);
+  }
+  92%,
+  100% {
+    transform: translate(650px, 262px) scale(0.72);
+  }
+}
+
+/* ===== Scene 6: AI 분석 ===== */
+.s6-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-top: 6px;
+}
+.s6-orbit {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+  animation: float 3s ease-in-out infinite;
+}
+.s6-orbit i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-lavender);
+  top: 50%;
+  left: 50%;
+  margin: -3.5px;
+  animation: spin 1.6s linear infinite;
+}
+.s6-orbit i:nth-child(1) {
+  transform-origin: 44px 0;
+}
+.s6-orbit i:nth-child(2) {
+  transform-origin: -44px 0;
+  background: var(--accent-pink);
+  animation-duration: 2.1s;
+}
+.s6-orbit i:nth-child(3) {
+  transform-origin: 0 48px;
+  background: var(--accent-amber);
+  animation-duration: 2.6s;
+}
+.s6-msg {
+  font-size: 14px;
+  font-weight: 700;
+  animation: introSceneIn 0.3s ease both;
+}
+.s6-bar {
+  width: 260px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+.s6-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-lavender), var(--accent-pink));
+  transform-origin: left;
+  animation: s6Fill 1s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+@keyframes s6Fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.s6-report {
+  animation: s2Glow 1.2s both;
+}
+
 .type-caret {
   display: inline-block;
   width: 2px;
